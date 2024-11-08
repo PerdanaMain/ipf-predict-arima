@@ -6,7 +6,7 @@ from model import get_values
 
 def index():
     print("========== Get Data From Database ==========")
-    data = get_values(3870)
+    data = get_values(1)
     data = np.array([item[2] for item in data])
 
     # Plot original data
