@@ -53,6 +53,11 @@ def plot_future_forecast(data, future_forecast, n_steps):
 def main():
     # Mengambil data dari database
     data = get_values(1)
+
+    if data is None:
+        print("Failed to fetch data from database.")
+        return Exception("Failed to fetch data from database.")
+
     X = np.array([item[2] for item in data])
 
     # Grid search parameter ARIMA terbaik
