@@ -52,7 +52,7 @@ def plot_future_forecast(data, future_forecast, n_steps):
 
 def main():
     # Mengambil data dari database
-    data = get_values(1)
+    data = get_values(3870)
 
     if data is None:
         print("Failed to fetch data from database.")
@@ -81,13 +81,44 @@ def main():
     # Menampilkan plot perbandingan aktual dan prediksi
     plot_results(test, predictions)
 
-    # Prediksi 3 bulan ke depan (asumsinya data harian; 3 bulan = 90 hari)
-    n_minutes = 129600
+    # prediksi 7 hari
+    n_minutes = 10080
     future_forecast = model_fit.forecast(steps=n_minutes)
-    print(f"Forecast for next {n_minutes} days: {future_forecast}")
+    print(f"Forecast for next {n_minutes //1440} days: {future_forecast}")
 
     # Plot hasil prediksi masa depan
     plot_future_forecast(X, future_forecast, n_minutes)
+
+    # Plot perbedaan antara data aktual dan prediksi
+    # difference(X, future_forecast, n_minutes)
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+def difference(X, future_forecast, n_minutes):
+    days = n_minutes // 1440
+
+    # Ambil data yang tidak sama/hilangkan grafik lurus dari future_forecast
+    selected_data = []
+
+    for i in range(len(future_forecast) - 1):
+        if round(future_forecast[i], 5) != round(future_forecast[i + 1], 5):
+            selected_data.append(future_forecast[i])
+
+    selected_actual_data = X[-len(selected_data) :]
+
+    print(len(selected_data), len(selected_actual_data))
+
+    # Plotting data
+    plt.figure(figsize=(12, 6))
+    plt.plot(X, label="Historical Data")
+    future_index = np.arange(len(X), len(X) + len(selected_data))
+    plt.plot(future_index, selected_data, color="green", label="Selected Forecast")
+    plt.title(f"Forecast for Next {days} Days")
+    plt.legend()
+    plt.show()
 
 
 if __name__ == "__main__":
