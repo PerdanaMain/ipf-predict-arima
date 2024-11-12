@@ -1,6 +1,19 @@
 from database import get_connection
 
 
+def get_all_tags():
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT id, web_id FROM dl_ms_tag")
+        tags = cur.fetchall()
+        cur.close()
+        conn.close()
+        return tags
+    except Exception as e:
+        print(f"An exception occurred: {e}")
+
+
 def get_tags(*tag_id):
     try:
         conn = get_connection()

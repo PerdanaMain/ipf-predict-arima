@@ -1,23 +1,40 @@
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
+import itertools
+import pytz
+import concurrent.futures
 from statsmodels.tsa.arima.model import ARIMA  # type: ignore
-from model import get_values
+from model import get_values, get_all_tags
 from sklearn.metrics import mean_squared_error  # type: ignore
 from math import sqrt
-import itertools
+from datetime import datetime
+from joblib import Parallel, delayed  # type: ignore
 
 
 def find_best_arima(data, p_range, d_range, q_range):
-    """Grid search untuk menemukan parameter ARIMA terbaik berdasarkan AIC."""
+    """Grid search untuk menemukan parameter ARIMA terbaik berdasarkan AIC dengan paralelisasi."""
     best_aic, best_order = float("inf"), None
-    for order in itertools.product(p_range, d_range, q_range):
+
+    def evaluate_arima(order):
         try:
             model = ARIMA(data, order=order)
             model_fit = model.fit()
-            if model_fit.aic < best_aic:
-                best_aic, best_order = model_fit.aic, order
+            return model_fit.aic, order
         except:
-            continue
+            return float("inf"), None
+
+    # Paralelisasi evaluasi ARIMA untuk setiap kombinasi parameter
+    results = Parallel(n_jobs=-1)(
+        delayed(evaluate_arima)(order)
+        for order in itertools.product(p_range, d_range, q_range)
+    )
+
+    # Pilih parameter dengan AIC terbaik
+    for aic, order in results:
+        if aic < best_aic:
+            best_aic, best_order = aic, order
+
     return best_order
 
 
@@ -40,7 +57,6 @@ def plot_results(test, predictions, title="Actual vs Predicted"):
 def plot_future_forecast(data, future_forecast, n_steps):
     """Menampilkan plot data aktual dengan prediksi masa depan."""
     days = n_steps // 1440  # Konversi menit ke hari
-
     plt.figure(figsize=(12, 6))
     plt.plot(data, label="Historical Data")
     future_index = np.arange(len(data), len(data) + n_steps)
@@ -50,10 +66,9 @@ def plot_future_forecast(data, future_forecast, n_steps):
     plt.show()
 
 
-def main():
+def main(tag_id):
     # Mengambil data dari database
-    data = get_values(3870)
-
+    data = get_values(tag_id)
     if data is None:
         print("Failed to fetch data from database.")
         return Exception("Failed to fetch data from database.")
@@ -79,22 +94,18 @@ def main():
     print(f"Test RMSE: {rmse:.3f}")
 
     # Menampilkan plot perbandingan aktual dan prediksi
-    plot_results(test, predictions)
+    # plot_results(test, predictions)
 
-    # prediksi 7 hari
+    # Prediksi 7 hari
     n_minutes = 10080
     future_forecast = model_fit.forecast(steps=n_minutes)
-    print(f"Forecast for next {n_minutes //1440} days: {future_forecast}")
+    print(f"Forecast for next {n_minutes // 1440} days: {future_forecast}")
 
     # Plot hasil prediksi masa depan
-    plot_future_forecast(X, future_forecast, n_minutes)
+    # plot_future_forecast(X, future_forecast, n_minutes)
 
     # Plot perbedaan antara data aktual dan prediksi
-    # difference(X, future_forecast, n_minutes)
-
-
-import numpy as np
-import matplotlib.pyplot as plt
+    difference(X, future_forecast, n_minutes)
 
 
 def difference(X, future_forecast, n_minutes):
@@ -102,7 +113,6 @@ def difference(X, future_forecast, n_minutes):
 
     # Ambil data yang tidak sama/hilangkan grafik lurus dari future_forecast
     selected_data = []
-
     for i in range(len(future_forecast) - 1):
         if round(future_forecast[i], 5) != round(future_forecast[i + 1], 5):
             selected_data.append(future_forecast[i])
@@ -112,14 +122,42 @@ def difference(X, future_forecast, n_minutes):
     print(len(selected_data), len(selected_actual_data))
 
     # Plotting data
-    plt.figure(figsize=(12, 6))
-    plt.plot(X, label="Historical Data")
-    future_index = np.arange(len(X), len(X) + len(selected_data))
-    plt.plot(future_index, selected_data, color="green", label="Selected Forecast")
-    plt.title(f"Forecast for Next {days} Days")
-    plt.legend()
-    plt.show()
+    # plt.figure(figsize=(12, 6))
+    # plt.plot(X, label="Historical Data")
+    # future_index = np.arange(len(X), len(X) + len(selected_data))
+    # plt.plot(future_index, selected_data, color="green", label="Selected Forecast")
+    # plt.title(f"Forecast for Next {days} Days")
+    # plt.legend()
+    # plt.show()
+
+
+def index():
+    time_start = datetime.now(pytz.timezone("Asia/Jakarta")).strftime(
+        "%Y-%m-%d %H:%M:%S"
+    )
+    print(f"Started training at: {time_start}")
+
+    tags = get_all_tags()
+
+    # Menggunakan ThreadPoolExecutor atau ProcessPoolExecutor untuk paralelisasi
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        # Menjalankan fungsi main secara paralel untuk setiap tag
+        futures = [executor.submit(main, tag[0]) for tag in tags]
+
+        # Menunggu semua thread selesai dan menangani error jika ada
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()  # Dapatkan hasil untuk memeriksa apakah ada error
+            except Exception as e:
+                print(f"Error in thread: {e}")
+
+    time_end = datetime.now(pytz.timezone("Asia/Jakarta")).strftime("%Y-%m-%d %H:%M:%S")
+    print(f"Started at: {time_start}, Ended at: {time_end}")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        index()  # Menjalankan fungsi utama
+    except KeyboardInterrupt:
+        print("Program stopped by user.")
+        sys.exit()
