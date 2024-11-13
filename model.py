@@ -37,7 +37,6 @@ def get_values(tag_id):
             SELECT tag_id, time_stamp, value 
             FROM dl_value_tag 
             WHERE tag_id = %s
-            AND time_stamp <= '2024-10-15 00:00:00'
             """,
             (tag_id,),
         )

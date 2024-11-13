@@ -1,7 +1,7 @@
 from datetime import datetime
 import pytz
-import numpy as np # type: ignore
-import matplotlib.pyplot as plt # type: ignore
+import numpy as np  # type: ignore
+import matplotlib.pyplot as plt  # type: ignore
 from statsmodels.tsa.arima.model import ARIMA  # type: ignore
 from model import get_values, get_all_tags
 from sklearn.metrics import mean_squared_error  # type: ignore
@@ -65,7 +65,7 @@ def execute_arima(tag_id):
     data = get_values(tag_id)
     if len(data) == 0:
         print(f"No data found for tag {tag_id}. Skipping ARIMA prediction.")
-        return 
+        return
 
     X = np.array([item[2] for item in data])
 
@@ -91,15 +91,14 @@ def execute_arima(tag_id):
     print(f"Test RMSE: {rmse:.3f}")
 
     # Menampilkan plot perbandingan aktual dan prediksi
-    # plot_results(test, predictions)
+    plot_results(test, predictions)
 
-    # Prediksi 3 bulan ke depan (asumsinya data harian; 3 bulan = 90 hari)
-    n_minutes = 129600  # 3 bulan dalam menit (asumsi 1440 menit/hari)
+    n_minutes = 1440 * 7  # Prediksi 7 hari ke depan
     future_forecast = model_fit.forecast(steps=n_minutes)
-    print(f"Forecast for next {n_minutes} days: {future_forecast[:5]}...")
+    print(f"Forecast for next {n_minutes / 1440} days: {future_forecast[:5]}...")
 
     # Plot hasil prediksi masa depan
-    # plot_future_forecast(X, future_forecast, n_minutes)
+    plot_future_forecast(X, future_forecast, n_minutes)
 
 
 def index():
@@ -115,4 +114,5 @@ def index():
 
 
 if __name__ == "__main__":
-    index()
+    # index()
+    execute_arima(3871)
