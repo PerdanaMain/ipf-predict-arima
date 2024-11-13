@@ -1,13 +1,14 @@
 from datetime import datetime
 import pytz
-import numpy as np
-import matplotlib.pyplot as plt
+import numpy as np # type: ignore
+import matplotlib.pyplot as plt # type: ignore
 from statsmodels.tsa.arima.model import ARIMA  # type: ignore
 from model import get_values, get_all_tags
 from sklearn.metrics import mean_squared_error  # type: ignore
 from math import sqrt
 import itertools
 from joblib import Parallel, delayed  # type: ignore # Untuk paralelisasi
+from concurrent.futures import ThreadPoolExecutor
 
 
 def evaluate_arima_model(data, order):
@@ -58,9 +59,14 @@ def plot_future_forecast(data, future_forecast, n_steps):
     plt.show()
 
 
-def exceute_arima(tag_id):
-    # Mengambil data dari database
+def execute_arima(tag_id):
+    print(f"====== Execute Predict for tag_id: {tag_id} ======")
+
     data = get_values(tag_id)
+    if len(data) == 0:
+        print(f"No data found for tag {tag_id}. Skipping ARIMA prediction.")
+        return 
+
     X = np.array([item[2] for item in data])
 
     # Gunakan subset data untuk grid search (opsional untuk mempercepat)
@@ -97,12 +103,12 @@ def exceute_arima(tag_id):
 
 
 def index():
-    tags = get_all_tags(10)
+    tags = get_all_tags(1000)
     time = datetime.now(pytz.timezone("Asia/Jakarta")).strftime("%Y-%m-%d %H:%M:%S")
     print(f"Starting ARIMA prediction at {time}")
 
-    for tag in tags:
-        exceute_arima(tag[0])
+    with ThreadPoolExecutor() as executor:
+        executor.map(execute_arima, [tag[0] for tag in tags])
 
     time = datetime.now(pytz.timezone("Asia/Jakarta")).strftime("%Y-%m-%d %H:%M:%S")
     print(f"ARIMA prediction finished at {time}")
