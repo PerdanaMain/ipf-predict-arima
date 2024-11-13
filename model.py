@@ -1,11 +1,11 @@
 from database import get_connection
 
 
-def get_all_tags():
+def get_all_tags(limit=10):
     try:
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute("SELECT id, web_id FROM dl_ms_tag")
+        cur.execute(f"SELECT id, web_id FROM dl_ms_tag limit {limit}")
         tags = cur.fetchall()
         cur.close()
         conn.close()
