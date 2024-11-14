@@ -1,14 +1,14 @@
 from matplotlib import pyplot as plt
-from model import get_values, create_predict
+from model import get_values, create_predict, get_all_tags
 from train import find_best_arima, train_arima_model
-from sklearn.metrics import mean_squared_error  # type: ignore
-from math import sqrt
 from datetime import timedelta
 import numpy as np
+from datetime import datetime
+import pytz
+from concurrent.futures import ThreadPoolExecutor
 
 
-def index():
-    tag_id = 1
+def execute_arima(tag_id):
     data = get_values(tag_id)
 
     if len(data) == 0:
@@ -47,7 +47,20 @@ def index():
 
     create_predict(tag_id, future_forecast, future_timestamps)
 
-    print("ARIMA prediction finished.")
+    print(f"ARIMA prediction for tag_id: {tag_id} finished.")
+    pass
+
+
+def index():
+    tags = get_all_tags(10)
+    time = datetime.now(pytz.timezone("Asia/Jakarta")).strftime("%Y-%m-%d %H:%M:%S")
+    print(f"Starting ARIMA prediction at {time}")
+
+    with ThreadPoolExecutor() as executor:
+        executor.map(execute_arima, [tag[0] for tag in tags])
+
+    time = datetime.now(pytz.timezone("Asia/Jakarta")).strftime("%Y-%m-%d %H:%M:%S")
+    print(f"ARIMA prediction finished at {time}")
 
 
 def plot_future_forecast(data, future_forecast, n_steps, timestamps):
