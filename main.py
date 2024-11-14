@@ -6,6 +6,7 @@ import numpy as np
 from datetime import datetime
 import pytz
 from concurrent.futures import ThreadPoolExecutor
+import time
 
 
 def execute_arima(tag_id):
@@ -52,7 +53,7 @@ def execute_arima(tag_id):
 
 
 def index():
-    tags = get_all_tags(10)
+    tags = get_all_tags()
     time = datetime.now(pytz.timezone("Asia/Jakarta")).strftime("%Y-%m-%d %H:%M:%S")
     print(f"Starting ARIMA prediction at {time}")
 
@@ -95,4 +96,6 @@ def plot_future_forecast(data, future_forecast, n_steps, timestamps):
 
 
 if __name__ == "__main__":
-    index()
+    while True:
+        index()
+        time.sleep(timedelta(days=2))

@@ -3,11 +3,11 @@ from datetime import datetime
 import pytz
 
 
-def get_all_tags(limit=10):
+def get_all_tags():
     try:
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute(f"SELECT id, web_id FROM dl_ms_tag limit {limit}")
+        cur.execute(f"SELECT id, web_id FROM dl_ms_tag")
         tags = cur.fetchall()
         cur.close()
         conn.close()
