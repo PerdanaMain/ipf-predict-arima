@@ -115,4 +115,4 @@ def index():
 
 if __name__ == "__main__":
     # index()
-    execute_arima(3871)
+    execute_arima(1)

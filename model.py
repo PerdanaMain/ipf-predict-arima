@@ -1,4 +1,6 @@
 from database import get_connection
+from datetime import datetime
+import pytz
 
 
 def get_all_tags(limit=10):
@@ -45,5 +47,26 @@ def get_values(tag_id):
         conn.close()
         print("Data fetched successfully, count: ", len(values))
         return values
+    except Exception as e:
+        print(f"An exception occurred {e}")
+
+
+def create_predict(tag_id, values, timestamps):
+    try:
+        now = datetime.now(pytz.timezone("Asia/Jakarta")).strftime("%Y-%m-%d %H:%M:%S")
+        conn = get_connection()
+        cur = conn.cursor()
+        sql = "INSERT INTO dl_predict_tag (tag_id, time_stamp, value, created_at, updated_at) VALUES (%s, %s, %s, %s, %s)"
+        cur.executemany(
+            sql,
+            [
+                (tag_id, timestamps[i], float(values[i]), now, now)
+                for i in range(len(values))
+            ],
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
     except Exception as e:
         print(f"An exception occurred {e}")
