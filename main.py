@@ -102,10 +102,7 @@ if __name__ == "__main__":
     while True:
         delete_predicts()
 
-        print_log(f"Starting ARIMA prediction")
-        # index()
-        execute_arima(1)
-        print_log(f"ARIMA prediction finished and will sleep for 7 days")
+        index()
 
         time.sleep(timedelta(days=7).total_seconds())
 
