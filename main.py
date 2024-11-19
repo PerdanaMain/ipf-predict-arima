@@ -1,11 +1,12 @@
-from matplotlib import pyplot as plt
-from model import get_values, create_predict, get_all_tags
+from matplotlib import pyplot as plt # type: ignore
+from model import get_values, create_predict, get_all_tags, delete_predicts
 from train import find_best_arima, train_arima_model
 from datetime import timedelta
-import numpy as np
 from datetime import datetime
-import pytz
 from concurrent.futures import ThreadPoolExecutor
+from log import print_log
+import numpy as np # type: ignore
+import pytz
 import time
 
 
@@ -49,19 +50,21 @@ def execute_arima(tag_id):
     create_predict(tag_id, future_forecast, future_timestamps)
 
     print(f"ARIMA prediction for tag_id: {tag_id} finished.")
-    pass
 
 
 def index():
     tags = get_all_tags()
     time = datetime.now(pytz.timezone("Asia/Jakarta")).strftime("%Y-%m-%d %H:%M:%S")
-    print(f"Starting ARIMA prediction at {time}")
+    print_log(f"Starting ARIMA prediction at {time}")
 
     with ThreadPoolExecutor() as executor:
-        executor.map(execute_arima, [tag[0] for tag in tags])
+        try:
+          executor.map(execute_arima, [tag[0] for tag in tags])
+        except Exception as e:
+          print_log(f'An exception occurred: {e}')
 
     time = datetime.now(pytz.timezone("Asia/Jakarta")).strftime("%Y-%m-%d %H:%M:%S")
-    print(f"ARIMA prediction finished at {time}")
+    print_log(f"ARIMA prediction finished at {time}")
 
 
 def plot_future_forecast(data, future_forecast, n_steps, timestamps):
@@ -97,5 +100,12 @@ def plot_future_forecast(data, future_forecast, n_steps, timestamps):
 
 if __name__ == "__main__":
     while True:
-        index()
-        time.sleep(timedelta(days=2))
+        delete_predicts()
+
+        print_log(f"Starting ARIMA prediction")
+        # index()
+        execute_arima(1)
+        print_log(f"ARIMA prediction finished and will sleep for 7 days")
+
+        time.sleep(timedelta(days=7).total_seconds())
+

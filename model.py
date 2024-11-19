@@ -1,5 +1,6 @@
 from database import get_connection
 from datetime import datetime
+from log import print_log
 import pytz
 
 
@@ -13,6 +14,7 @@ def get_all_tags():
         conn.close()
         return tags
     except Exception as e:
+        print_log(f"An exception occurred {e}")
         print(f"An exception occurred: {e}")
 
 
@@ -27,6 +29,7 @@ def get_tags(*tag_id):
         conn.close()
         return tags
     except Exception as e:
+        print_log(f"An exception occurred {e}")
         print(f"An exception occurred {e}")
 
 
@@ -48,6 +51,7 @@ def get_values(tag_id):
         print("Data fetched successfully, count: ", len(values))
         return values
     except Exception as e:
+        print_log(f"An exception occurred {e}")
         print(f"An exception occurred {e}")
 
 
@@ -69,4 +73,21 @@ def create_predict(tag_id, values, timestamps):
         conn.close()
 
     except Exception as e:
+        print_log(f"An exception occurred {e}")
+        print(f"An exception occurred {e}")
+
+def delete_predicts():
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        sql = "DELETE FROM dl_predict_tag"
+        cur.execute(sql)
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        print_log("All prediction data has been deleted.")
+
+    except Exception as e:
+        print_log(f"An exception occurred {e}")
         print(f"An exception occurred {e}")
