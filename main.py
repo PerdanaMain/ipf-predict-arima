@@ -1,5 +1,6 @@
 from matplotlib import pyplot as plt # type: ignore
-from model import get_values, create_predict, get_all_tags, delete_predicts
+from requests import get # type: ignore
+from model import *
 from train import find_best_arima, train_arima_model
 from datetime import timedelta
 from datetime import datetime
@@ -9,100 +10,102 @@ import numpy as np # type: ignore
 import pytz
 import time
 
-
-def execute_arima(tag_id):
-    data = get_values(tag_id)
+def execute_arima(equipment_id, features_id):
+    data = get_values(equipment_id, features_id)
 
     if len(data) == 0:
-        print("No data found")
+        print(f"No data found for equipment_id: {equipment_id}, features_id: {features_id}")
         return
 
     # Ekstrak value dan timestamp
-    X = np.array([val[2] for val in data])
-    timestamps = [val[1] for val in data]
+    raw_values = [val[3] for val in data] 
+    timestamps = [val[2] for val in data] 
 
-    subset = X[: int(len(X) * 0.5)]  # Gunakan 50% data awal untuk pencarian cepat
+    X = []
+    for value in raw_values:
+        try:
+            X.append(float(value))
+        except (ValueError, TypeError):
+            # Jika konversi gagal, masukkan nilai default (0) atau nilai lainnya
+            X.append(0.0)
 
-    # Grid search parameter ARIMA terbaik
+    if len(X) < 10:  # Minimum data untuk ARIMA
+        print(f"Insufficient data for ARIMA: {len(X)} records found.")
+        return
+
+    # Gunakan 50% data awal untuk pencarian parameter ARIMA
+    subset = X[: int(len(X) * 0.5)]
     best_order = find_best_arima(
         subset, p_range=range(0, 3), d_range=range(0, 2), q_range=range(0, 3)
     )
-    print(f"Best ARIMA order: {best_order}")
+    print(f"Best ARIMA order for equipment_id {equipment_id}, features_id {features_id}: {best_order}")
 
     # Membagi data menjadi pelatihan dan pengujian
     split_index = int(len(X) * 0.66)
     train, test = X[:split_index], X[split_index:]
-    train_timestamps, test_timestamps = (
-        timestamps[:split_index],
-        timestamps[split_index:],
-    )
 
-    # Melatih model dengan parameter terbaik
     model_fit = train_arima_model(train, best_order)
 
-    n_minutes = 1440 * 7  # Prediksi 7 hari ke depan
-    future_forecast = model_fit.forecast(steps=n_minutes)
+    n_days = 7
+    future_forecast = model_fit.forecast(steps=n_days)
 
-    future_timestamps = [
-        timestamps[-1] + timedelta(minutes=i) for i in range(1, n_minutes + 1)
-    ]
+    # Membuat timestamp untuk 7 hari ke depan
+    last_date = timestamps[-1]
+    future_timestamps = [(last_date + timedelta(days=i + 1)).strftime("%Y-%m-%d") for i in range(n_days)]
 
-    create_predict(tag_id, future_forecast, future_timestamps)
+    # delete old prediction
+    delete_predicts(equipment_id, features_id)
 
-    print(f"ARIMA prediction for tag_id: {tag_id} finished.")
+    # Simpan hasil prediksi
+    create_predict(equipment_id, features_id, future_forecast, future_timestamps)
+
+    print(f"ARIMA prediction for equipment_id: {equipment_id} finished.")
+
 
 
 def index():
-    tags = get_all_tags()
+    features = get_all_features() 
+    equipments = get_all_equipment()  
     time = datetime.now(pytz.timezone("Asia/Jakarta")).strftime("%Y-%m-%d %H:%M:%S")
     print_log(f"Starting ARIMA prediction at {time}")
 
+    def process(equipment, feature):
+        """Fungsi pembantu untuk dieksekusi secara paralel."""
+        try:
+            execute_arima(equipment, feature)  
+        except Exception as e:
+            print(f"Error processing tag {equipment} and feature {feature}: {e}")
+            print_log(f"Error processing tag {equipment} and feature {feature}: {e}")
+
     with ThreadPoolExecutor() as executor:
         try:
-          executor.map(execute_arima, [tag[0] for tag in tags])
+            futures = [
+                executor.submit(process, equipment[0], feature[0])
+                for equipment in equipments
+                for feature in features
+            ]
+            for future in futures:
+                future.result()  
         except Exception as e:
-          print_log(f'An exception occurred: {e}')
+            print(f"An exception occurred: {e}")
+            print_log(f"An exception occurred: {e}")
 
     time = datetime.now(pytz.timezone("Asia/Jakarta")).strftime("%Y-%m-%d %H:%M:%S")
     print_log(f"ARIMA prediction finished at {time}")
 
 
-def plot_future_forecast(data, future_forecast, n_steps, timestamps):
-    """Menampilkan plot data aktual dengan prediksi masa depan."""
-    days = n_steps // 1440  # Konversi menit ke hari
-
-    # Buat timestamp untuk 7 hari ke depan dengan interval per menit
-    future_timestamps = [
-        timestamps[-1] + timedelta(minutes=i) for i in range(1, n_steps + 1)
-    ]
-
-    print("Length of timestamps: ", len(timestamps))
-    print("Length of data: ", len(data))
-    print("Length of future forecast: ", len(future_forecast))
-    print("Length of future timestamps: ", len(future_timestamps))
-
-    print("Length of timestamps: ", len(timestamps))
-    print(timestamps)
-
-    # # Cetak beberapa contoh timestamp untuk memastikan hasil
-    # print("Contoh timestamp masa depan:", future_timestamps[:10])
-
-    # plt.figure(figsize=(12, 6))
-    # # plt.plot(timestamps, data, label="Historical Data", color="blue")
-    # plt.plot(future_timestamps, future_forecast, color="green", label="7-Day Forecast")
-    # plt.xlabel("Timestamp")
-    # plt.ylabel("Values")
-    # plt.title(f"Forecast for Next {days} Days")
-    # plt.legend()
-    # plt.grid(True)
-    # plt.show()
-
 
 if __name__ == "__main__":
     while True:
-        delete_predicts()
+        date = datetime.now(pytz.timezone("Asia/Jakarta"))
 
-        index()
+        index()        
+        
+        next_execution = (datetime.now(pytz.timezone("Asia/Jakarta")).replace(hour=5, minute=0, second=0, microsecond=0) + timedelta(days=1))
+        wait_time = (next_execution - datetime.now(pytz.timezone("Asia/Jakarta"))).total_seconds()
 
-        time.sleep(timedelta(days=7).total_seconds())
+        print_log(f"Next execution scheduled at: {next_execution}")
+        print("Next execution scheduled at: ", next_execution)
+
+        time.sleep(wait_time)
 

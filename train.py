@@ -3,7 +3,7 @@ import pytz
 import numpy as np  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
 from statsmodels.tsa.arima.model import ARIMA  # type: ignore
-from model import get_values, get_all_tags
+from model import *
 from sklearn.metrics import mean_squared_error  # type: ignore
 from math import sqrt
 import itertools
@@ -102,7 +102,7 @@ def execute_arima(tag_id):
 
 
 def index():
-    tags = get_all_tags(1000)
+    tags = get_all_equipment(1000)
     time = datetime.now(pytz.timezone("Asia/Jakarta")).strftime("%Y-%m-%d %H:%M:%S")
     print(f"Starting ARIMA prediction at {time}")
 
