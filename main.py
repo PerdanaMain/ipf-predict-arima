@@ -68,6 +68,7 @@ def index():
     equipments = get_all_equipment()  
     time = datetime.now(pytz.timezone("Asia/Jakarta")).strftime("%Y-%m-%d %H:%M:%S")
     print_log(f"Starting ARIMA prediction at {time}")
+    print(f"Starting ARIMA prediction at {time}")
 
     def process(equipment, feature):
         """Fungsi pembantu untuk dieksekusi secara paralel."""
@@ -92,20 +93,23 @@ def index():
 
     time = datetime.now(pytz.timezone("Asia/Jakarta")).strftime("%Y-%m-%d %H:%M:%S")
     print_log(f"ARIMA prediction finished at {time}")
+    print(f"ARIMA prediction finished at {time}")
 
 
 
 if __name__ == "__main__":
-    while True:
-        date = datetime.now(pytz.timezone("Asia/Jakarta"))
+    index()        
 
-        index()        
+    # while True:
+    #     date = datetime.now(pytz.timezone("Asia/Jakarta"))
+
+    #     # index()        
         
-        next_execution = (datetime.now(pytz.timezone("Asia/Jakarta")).replace(hour=5, minute=0, second=0, microsecond=0) + timedelta(days=1))
-        wait_time = (next_execution - datetime.now(pytz.timezone("Asia/Jakarta"))).total_seconds()
+    #     next_execution = (datetime.now(pytz.timezone("Asia/Jakarta")).replace(hour=5, minute=0, second=0, microsecond=0) + timedelta(days=1))
+    #     wait_time = (next_execution - datetime.now(pytz.timezone("Asia/Jakarta"))).total_seconds()
 
-        print_log(f"Next execution scheduled at: {next_execution}")
-        print("Next execution scheduled at: ", next_execution)
+    #     print_log(f"Next execution scheduled at: {next_execution}")
+    #     print("Next execution scheduled at: ", next_execution)
 
-        time.sleep(wait_time)
+    #     time.sleep(wait_time)
 

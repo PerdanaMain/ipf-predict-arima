@@ -9,7 +9,7 @@ def get_all_equipment():
     try:
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute(f"SELECT id, name FROM ms_equipment_master WHERE equipment_tree_id = '685e145b-b9bc-466d-ac0e-da56ca4ed8d0'")
+        cur.execute(f"SELECT id, name FROM ms_equipment_master_backup WHERE equipment_tree_id = '685e145b-b9bc-466d-ac0e-da56ca4ed8d0'")
         tags = cur.fetchall()
         cur.close()
         conn.close()
@@ -53,7 +53,7 @@ def get_values(equipment_id,features_id):
         cur.execute(
             """
             SELECT id, equipment_id, date_time, value 
-            FROM dl_features_data
+            FROM dl_features_data_backup
             WHERE equipment_id = %s AND features_id = %s
             """,
             (equipment_id, features_id),
@@ -76,7 +76,7 @@ def create_predict(equipment_id, features_id, values, timestamps):
         
         # SQL Query
         sql = """
-        INSERT INTO dl_predict (id, equipment_id, features_id, date_time, pfi_value, status, created_at, updated_at)
+        INSERT INTO dl_predict_backup (id, equipment_id, features_id, date_time, pfi_value, status, created_at, updated_at)
         VALUES (%s, %s, %s, %s, %s, %s,%s, %s)
         """
         
@@ -111,7 +111,7 @@ def delete_predicts(equipment_id, features_id):
         cur = conn.cursor()
         cur.execute(
             """
-            DELETE FROM dl_predict
+            DELETE FROM dl_predict_backup
             WHERE equipment_id = %s AND features_id = %s
             """,
             (equipment_id, features_id),
