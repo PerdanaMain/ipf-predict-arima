@@ -98,18 +98,18 @@ def index():
 
 
 if __name__ == "__main__":
-    index()        
+    # index()        
 
-    # while True:
-    #     date = datetime.now(pytz.timezone("Asia/Jakarta"))
+    while True:
+        date = datetime.now(pytz.timezone("Asia/Jakarta"))
 
-    #     # index()        
+        index()        
         
-    #     next_execution = (datetime.now(pytz.timezone("Asia/Jakarta")).replace(hour=5, minute=0, second=0, microsecond=0) + timedelta(days=1))
-    #     wait_time = (next_execution - datetime.now(pytz.timezone("Asia/Jakarta"))).total_seconds()
+        next_execution = (datetime.now(pytz.timezone("Asia/Jakarta")).replace(hour=5, minute=0, second=0, microsecond=0) + timedelta(days=1))
+        wait_time = (next_execution - datetime.now(pytz.timezone("Asia/Jakarta"))).total_seconds()
 
-    #     print_log(f"Next execution scheduled at: {next_execution}")
-    #     print("Next execution scheduled at: ", next_execution)
+        print_log(f"Next execution scheduled at: {next_execution}")
+        print("Next execution scheduled at: ", next_execution)
 
-    #     time.sleep(wait_time)
+        time.sleep(wait_time)
 
