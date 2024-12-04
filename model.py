@@ -46,17 +46,17 @@ def get_tags(*tag_id):
         print(f"An exception occurred {e}")
 
 
-def get_values(equipment_id,features_id):
+def get_values(part_id,features_id):
     try:
         conn = get_connection()
         cur = conn.cursor()
         cur.execute(
             """
-            SELECT id, equipment_id, date_time, value 
-            FROM dl_features_data_backup
-            WHERE equipment_id = %s AND features_id = %s
+            SELECT id, part_id, date_time, value 
+            FROM dl_features_data
+            WHERE part_id = %s AND features_id = %s
             """,
-            (equipment_id, features_id),
+            (part_id, features_id),
         )
         values = cur.fetchall()
         cur.close()

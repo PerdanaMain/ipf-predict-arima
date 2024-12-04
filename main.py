@@ -62,7 +62,7 @@ def execute_arima(equipment_id, features_id):
     print(f"ARIMA prediction for equipment_id: {equipment_id} finished.")
 
 
-
+# not used
 def index():
     features = get_all_features() 
     equipments = get_all_equipment()  
