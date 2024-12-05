@@ -10,11 +10,12 @@ import numpy as np # type: ignore
 import pytz
 import time
 
-def execute_arima(equipment_id, features_id):
-    data = get_values(equipment_id, features_id)
+def execute_arima(part_id, features_id):
+    data = get_values(part_id, features_id)
+    print(data)
 
     if len(data) == 0:
-        print(f"No data found for equipment_id: {equipment_id}, features_id: {features_id}")
+        print(f"No data found for part_id: {part_id}, features_id: {features_id}")
         return
 
     # Ekstrak value dan timestamp
@@ -38,7 +39,7 @@ def execute_arima(equipment_id, features_id):
     best_order = find_best_arima(
         subset, p_range=range(0, 3), d_range=range(0, 2), q_range=range(0, 3)
     )
-    print(f"Best ARIMA order for equipment_id {equipment_id}, features_id {features_id}: {best_order}")
+    print(f"Best ARIMA order for part_id {part_id}, features_id {features_id}: {best_order}")
 
     # Membagi data menjadi pelatihan dan pengujian
     split_index = int(len(X) * 0.66)
@@ -54,15 +55,14 @@ def execute_arima(equipment_id, features_id):
     future_timestamps = [(last_date + timedelta(days=i + 1)).strftime("%Y-%m-%d") for i in range(n_days)]
 
     # delete old prediction
-    delete_predicts(equipment_id, features_id)
+    delete_predicts(part_id, features_id)
 
     # Simpan hasil prediksi
-    create_predict(equipment_id, features_id, future_forecast, future_timestamps)
+    create_predict(part_id, features_id, future_forecast, future_timestamps)
 
-    print(f"ARIMA prediction for equipment_id: {equipment_id} finished.")
+    print(f"ARIMA prediction for part_id: {part_id} finished.")
 
 
-# not used
 def index():
     features = get_all_features() 
     equipments = get_all_equipment()  
@@ -108,8 +108,8 @@ if __name__ == "__main__":
         next_execution = (datetime.now(pytz.timezone("Asia/Jakarta")).replace(hour=5, minute=0, second=0, microsecond=0) + timedelta(days=1))
         wait_time = (next_execution - datetime.now(pytz.timezone("Asia/Jakarta"))).total_seconds()
 
-        print_log(f"Next execution scheduled at: {next_execution}")
-        print("Next execution scheduled at: ", next_execution)
+        print(f"Next execution will be at {next_execution.strftime('%Y-%m-%d %H:%M:%S')}")
+        print_log(f"Next execution will be at {next_execution.strftime('%Y-%m-%d %H:%M:%S')}")
 
         time.sleep(wait_time)
 

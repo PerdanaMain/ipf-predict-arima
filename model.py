@@ -9,7 +9,7 @@ def get_all_equipment():
     try:
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute(f"SELECT id, name FROM ms_equipment_master_backup WHERE equipment_tree_id = '685e145b-b9bc-466d-ac0e-da56ca4ed8d0'")
+        cur.execute(f"SELECT id, part_name FROM pf_parts")
         tags = cur.fetchall()
         cur.close()
         conn.close()
@@ -68,7 +68,7 @@ def get_values(part_id,features_id):
         print(f"An exception occurred {e}")
 
 
-def create_predict(equipment_id, features_id, values, timestamps):
+def create_predict(part_id, features_id, values, timestamps):
     try:
         now = datetime.now(pytz.timezone("Asia/Jakarta")).strftime("%Y-%m-%d %H:%M:%S")
         conn = get_connection()
@@ -76,7 +76,7 @@ def create_predict(equipment_id, features_id, values, timestamps):
         
         # SQL Query
         sql = """
-        INSERT INTO dl_predict_backup (id, equipment_id, features_id, date_time, pfi_value, status, created_at, updated_at)
+        INSERT INTO dl_predict (id, part_id, features_id, date_time, pfi_value, status, created_at, updated_at)
         VALUES (%s, %s, %s, %s, %s, %s,%s, %s)
         """
         
@@ -85,13 +85,13 @@ def create_predict(equipment_id, features_id, values, timestamps):
         for value, timestamp in zip(values, timestamps):
             predict_id = str(uuid.uuid4())  # Generate a new UUID for each record
             value = float(value)
-            data_to_insert.append((predict_id, equipment_id, features_id, timestamp, value, "normal", now, now))
+            data_to_insert.append((predict_id, part_id, features_id, timestamp, value, "normal", now, now))
         
         # Execute batch insert
         cur.executemany(sql, data_to_insert)
         # Commit perubahan
         conn.commit()
-        print_log(f"Predictions successfully saved for equipment_id {equipment_id}, features_id {features_id}.")
+        print_log(f"Predictions successfully saved for part_id {part_id}, features_id {features_id}.")
     
     except Exception as e:
         print_log(f"An exception occurred: {e}")
@@ -105,19 +105,19 @@ def create_predict(equipment_id, features_id, values, timestamps):
             conn.close()
 
 
-def delete_predicts(equipment_id, features_id):
+def delete_predicts(part_id, features_id):
     try:
         conn = get_connection()
         cur = conn.cursor()
         cur.execute(
             """
-            DELETE FROM dl_predict_backup
-            WHERE equipment_id = %s AND features_id = %s
+            DELETE FROM dl_predict
+            WHERE part_id = %s AND features_id = %s
             """,
-            (equipment_id, features_id),
+            (part_id, features_id),
         )
         conn.commit()
-        print_log(f"Predictions for equipment_id {equipment_id}, features_id {features_id} successfully deleted.")
+        print_log(f"Predictions for part_id {part_id}, features_id {features_id} successfully deleted.")
     except Exception as e:
         print(f"An exception occurred while deleting predicts: {e}")
         print_log(f"An exception occurred: {e}")
