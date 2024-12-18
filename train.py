@@ -1,11 +1,12 @@
 from datetime import datetime, timedelta
 from model import *
-import pandas as pd  # type: ignore
+import pandas as pd
 import numpy as np
-from statsmodels.tsa.arima.model import ARIMA  # type: ignore
-from statsmodels.tsa.stattools import adfuller  # type: ignore
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tsa.stattools import adfuller
+from statsmodels.tsa.seasonal import seasonal_decompose
 import matplotlib.pyplot as plt
-from sklearn.metrics import mean_squared_error  # type: ignore
+from sklearn.metrics import mean_squared_error
 from math import sqrt
 
 
@@ -21,6 +22,62 @@ def prepare_data(values):
     return df
 
 
+def decompose_timeseries(data):
+    """
+    Melakukan dekomposisi time series menjadi komponen trend, seasonal, dan residual
+    """
+    # Lakukan dekomposisi
+    decomposition = seasonal_decompose(data, period=24)  # period=24 untuk data per jam
+
+    # Dapatkan komponen-komponennya
+    trend = decomposition.trend
+    seasonal = decomposition.seasonal
+    residual = decomposition.resid
+
+    # Plot hasil dekomposisi
+    plt.figure(figsize=(15, 12))
+    plt.subplot(411)
+    plt.plot(data)
+    plt.title("Original Data")
+    plt.subplot(412)
+    plt.plot(trend)
+    plt.title("Trend")
+    plt.subplot(413)
+    plt.plot(seasonal)
+    plt.title("Seasonal")
+    plt.subplot(414)
+    plt.plot(residual)
+    plt.title("Residual")
+    plt.tight_layout()
+    plt.show()
+
+    return trend, seasonal, residual
+
+
+def prepare_data_with_decomposition(values):
+    """
+    Menyiapkan data dengan dekomposisi
+    """
+    # Persiapan data awal
+    df = prepare_data(values)
+
+    # Lakukan dekomposisi
+    trend, seasonal, residual = decompose_timeseries(df["value"])
+
+    # Hapus NaN values yang muncul dari dekomposisi
+    valid_idx = ~(trend.isna() | seasonal.isna() | residual.isna())
+    trend = trend[valid_idx]
+    seasonal = seasonal[valid_idx]
+    residual = residual[valid_idx]
+
+    # Simpan komponen dalam DataFrame
+    df_decomposed = pd.DataFrame(
+        {"trend": trend, "seasonal": seasonal, "residual": residual}
+    )
+
+    return df_decomposed
+
+
 def find_best_parameters(data):
     """
     Mencari parameter terbaik untuk model ARIMA
@@ -28,9 +85,10 @@ def find_best_parameters(data):
     best_aic = float("inf")
     best_params = None
 
-    p_values = range(0, 3)
-    d_values = range(0, 2)
-    q_values = range(0, 3)
+    # Perluas range pencarian parameter
+    p_values = range(0, 5)
+    d_values = range(0, 3)
+    q_values = range(0, 5)
 
     for p in p_values:
         for d in d_values:
@@ -47,104 +105,42 @@ def find_best_parameters(data):
     return best_params
 
 
-def train_arima_model(data, order):
+def train_arima_with_decomposition(data):
     """
-    Melatih model ARIMA dengan parameter yang ditentukan
+    Melatih model ARIMA untuk setiap komponen
     """
-    model = ARIMA(data, order=order)
-    return model.fit()
+    models = {}
+    forecasts = {}
+
+    for component in ["trend", "seasonal", "residual"]:
+        # Cari parameter terbaik untuk setiap komponen
+        best_params = find_best_parameters(data[component])
+        print(f"Parameter terbaik untuk {component}: {best_params}")
+
+        # Train model untuk setiap komponen
+        model = ARIMA(data[component], order=best_params)
+        fitted_model = model.fit()
+
+        models[component] = fitted_model
+
+    return models
 
 
-def make_weekly_forecast(model, start_date):
+def forecast_with_decomposition(models, steps=168):
     """
-    Membuat prediksi untuk 7 hari ke depan (168 jam)
+    Membuat prediksi dengan menggabungkan hasil prediksi setiap komponen
     """
-    # Membuat prediksi dengan interval kepercayaan
-    forecast_result = model.get_forecast(steps=168)
+    forecasts = {}
 
-    # Mendapatkan prediksi mean dan interval kepercayaan
-    forecast_mean = forecast_result.predicted_mean
-    conf_int = forecast_result.conf_int()
+    # Prediksi untuk setiap komponen
+    for component, model in models.items():
+        forecast = model.forecast(steps=steps)
+        forecasts[component] = forecast
 
-    # Membuat index datetime untuk 7 hari ke depan
-    forecast_index = pd.date_range(start=start_date, periods=168, freq="H")
+    # Gabungkan prediksi
+    final_forecast = forecasts["trend"] + forecasts["seasonal"] + forecasts["residual"]
 
-    # Membuat DataFrame dengan prediksi dan interval kepercayaan
-    forecast_df = pd.DataFrame(
-        {
-            "forecast": forecast_mean,
-            "lower_ci": conf_int.iloc[:, 0],
-            "upper_ci": conf_int.iloc[:, 1],
-        },
-        index=forecast_index,
-    )
-
-    return forecast_df
-
-
-def plot_data_preparation(values):
-    """
-    Memvisualisasikan data sebelum dan sesudah prepare_data()
-    """
-    # Data original
-    df_original = pd.DataFrame(values, columns=["timestamp", "value"])
-    df_original.set_index("timestamp", inplace=True)
-    df_original.sort_index(inplace=True)
-
-    # Data setelah preparation
-    df_prepared = prepare_data(values)
-
-    # Membuat plot
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 10))
-
-    # Plot data original
-    ax1.plot(
-        df_original.index,
-        df_original["value"],
-        "o-",
-        label="Data Original",
-        color="blue",
-        markersize=4,
-    )
-    ax1.set_title("Data Original")
-    ax1.set_xlabel("Timestamp")
-    ax1.set_ylabel("Value")
-    ax1.grid(True)
-    ax1.tick_params(axis="x", rotation=45)
-
-    # Plot data setelah preparation
-    ax2.plot(
-        df_prepared.index,
-        df_prepared["value"],
-        "o-",
-        label="Data Setelah Preparation",
-        color="red",
-        markersize=2,
-    )
-    ax2.set_title("Data Setelah Preparation (Resampling & Interpolasi)")
-    ax2.set_xlabel("Timestamp")
-    ax2.set_ylabel("Value")
-    ax2.grid(True)
-    ax2.tick_params(axis="x", rotation=45)
-
-    plt.tight_layout()
-    plt.show()
-
-    # Print informasi tambahan
-    print("\nInformasi Data:")
-    print(f"Jumlah data original: {len(df_original)}")
-    print(f"Jumlah data setelah preparation: {len(df_prepared)}")
-    print(f"\nRange waktu data:")
-    print(f"Start: {df_original.index.min()}")
-    print(f"End: {df_original.index.max()}")
-
-    # Hitung gap dalam data original
-    time_diff = df_original.index.to_series().diff()
-    gaps = time_diff[time_diff > pd.Timedelta(hours=1)]
-    if not gaps.empty:
-        print("\nGap dalam data original (> 1 jam):")
-        for idx, gap in gaps.items():
-            print(f"Gap pada {idx}: {gap}")
+    return final_forecast
 
 
 def plot_forecast(actual_data, forecast_df):
@@ -181,7 +177,7 @@ def plot_forecast(actual_data, forecast_df):
     )
 
     # Menambahkan label dan judul
-    plt.title("7-Day Forecast with ARIMA")
+    plt.title("7-Day Forecast with ARIMA (Decomposition)")
     plt.xlabel("Date")
     plt.ylabel("Value")
     plt.legend()
@@ -207,27 +203,31 @@ def plot_forecast(actual_data, forecast_df):
 
 def main():
     # Mengambil data
-    values = get_values("386fe843-5e4e-4647-8623-3eaa4d4eba28")
-    # plot_data_preparation(values)
+    values = get_values("7e8c7edb-b2b4-4c02-94c2-035724640854")
 
-    # Menyiapkan data
-    df = prepare_data(values)
+    # Siapkan data dengan dekomposisi
+    df_decomposed = prepare_data_with_decomposition(values)
 
-    # Mencari parameter terbaik
-    best_params = find_best_parameters(df["value"])
-    print(f"Parameter ARIMA terbaik: {best_params}")
+    # Train model untuk setiap komponen
+    models = train_arima_with_decomposition(df_decomposed)
 
-    # Melatih model dengan seluruh data
-    model = train_arima_model(df["value"], order=best_params)
+    # Buat prediksi
+    forecast = forecast_with_decomposition(models)
 
-    # Membuat prediksi 7 hari ke depan
-    last_date = df.index[-1]
-    forecast = make_weekly_forecast(model, last_date)
+    # Buat DataFrame untuk hasil prediksi
+    last_date = df_decomposed.index[-1]
+    forecast_index = pd.date_range(start=last_date, periods=169, freq="H")[1:]
+    forecast_df = pd.DataFrame(
+        {
+            "forecast": forecast,
+            "lower_ci": forecast - 2 * forecast.std(),  # Approximate 95% CI
+            "upper_ci": forecast + 2 * forecast.std(),
+        },
+        index=forecast_index,
+    )
 
-    print(forecast)
-
-    # Menampilkan visualisasi
-    # plot_forecast(df["value"], forecast)
+    # Plot hasil
+    plot_forecast(df_decomposed.sum(axis=1), forecast_df)
 
 
 if __name__ == "__main__":
