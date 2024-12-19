@@ -5,7 +5,7 @@ import pytz
 import uuid
 
 
-def get_all_equipment():
+def get_parts():
     try:
         conn = get_connection()
         cur = conn.cursor()
@@ -23,7 +23,13 @@ def get_part(part_id):
     try:
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute(f"SELECT id, part_name FROM pf_parts WHERE id = %s", (part_id,))
+        cur.execute(
+            f"""
+            SELECT id, part_name, type_id
+            FROM pf_parts WHERE id = %s
+            """,
+            (part_id,),
+        )
         part = cur.fetchall()
         cur.close()
         conn.close()
