@@ -1,6 +1,6 @@
 from matplotlib import pyplot as plt
 from model import get_values
-from train import execute_arima
+from non_vibration_train import execute_arima
 
 
 def index():

@@ -15,6 +15,7 @@ matplotlib = "^3.9.2"
 statsmodels = "^0.14.4"
 pandas = "^2.2.3"
 joblib = "^1.4.2"
+apscheduler = "^3.11.0"
 
 
 [build-system]

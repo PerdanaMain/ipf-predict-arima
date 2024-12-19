@@ -166,11 +166,9 @@ def plot_forecast(actual_data, forecast_df):
     plt.show()
 
 
-def main():
+def main(part_id, features_id):
     # Mengambil data
-    values = get_values(
-        "7e8c7edb-b2b4-4c02-94c2-035724640854", "9dcb7e40-ada7-43eb-baf4-2ed584233de7"
-    )
+    values = get_values(part_id, features_id)
 
     steps = 24 * 30
     periods = steps + 1
@@ -189,19 +187,24 @@ def main():
     forecast_index = pd.date_range(start=last_date, periods=periods, freq="h")[1:]
     forecast_df = pd.DataFrame(
         {
-            "forecast": forecast,
-            "lower_ci": forecast - 2 * forecast.std(),
-            "upper_ci": forecast + 2 * forecast.std(),
+            "forecast": forecast,  # date_time dan value ada disini
+            "features_id": features_id,
+            "part_id": part_id,
+            # "lower_ci": forecast - 2 * forecast.std(),
+            # "upper_ci": forecast + 2 * forecast.std(),
         },
         index=forecast_index,
     )
 
     # Plot hasil
-    plot_forecast(df_decomposed.sum(axis=1), forecast_df)
+    # plot_forecast(df_decomposed.sum(axis=1), forecast_df)
+    save_predictions_to_db(forecast_df)
 
     # Return hasil prediksi
     return forecast_df
 
 
 if __name__ == "__main__":
-    forecast_results = main()
+    result_df = main(
+        "c3ac118c-4f47-4794-bcb1-1af06045d0ab", "5765a11a-2f89-45dc-a37b-46d384a1ff9e"
+    )

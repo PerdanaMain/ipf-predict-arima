@@ -1,115 +1,131 @@
-from matplotlib import pyplot as plt # type: ignore
-from requests import get # type: ignore
 from model import *
-from train import find_best_arima, train_arima_model
-from datetime import timedelta
+from non_vibration_train import main as non_vibration_train_main
+from vibration_train import main as vibration_train_main
+import asyncio
+import concurrent.futures
+from typing import List, Tuple
+import multiprocessing as mp
+from apscheduler.schedulers.asyncio import AsyncIOScheduler  # type: ignore
+from apscheduler.triggers.cron import CronTrigger  # type: ignore
+import logging
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor
-from log import print_log
-import numpy as np # type: ignore
 import pytz
-import time
 
-def execute_arima(part_id, features_id):
-    data = get_values(part_id, features_id)
-    print(data)
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler("logs/training_scheduler.log"),
+        logging.StreamHandler(),
+    ],
+)
+logger = logging.getLogger(__name__)
 
-    if len(data) == 0:
-        print(f"No data found for part_id: {part_id}, features_id: {features_id}")
-        return
 
-    # Ekstrak value dan timestamp
-    raw_values = [val[3] for val in data] 
-    timestamps = [val[2] for val in data] 
+async def train_feature(
+    part_id: str,
+    features_id: str,
+    features_name: str,
+    part_name: str,
+    is_vibration: bool,
+):
+    """Execute training for a single feature asynchronously"""
+    logger.info(f"Training {part_name} {features_name}...")
 
-    X = []
-    for value in raw_values:
-        try:
-            X.append(float(value))
-        except (ValueError, TypeError):
-            # Jika konversi gagal, masukkan nilai default (0) atau nilai lainnya
-            X.append(0.0)
+    try:
+        if is_vibration:
+            await asyncio.get_event_loop().run_in_executor(
+                None, vibration_train_main, part_id, features_id
+            )
+        else:
+            await asyncio.get_event_loop().run_in_executor(
+                None, non_vibration_train_main, part_id, features_id
+            )
 
-    if len(X) < 10:  # Minimum data untuk ARIMA
-        print(f"Insufficient data for ARIMA: {len(X)} records found.")
-        return
+        logger.info(f"Finished training {part_name} {features_name}")
+        logger.info("=====================================")
+    except Exception as e:
+        logger.error(f"Error training {part_name} {features_name}: {str(e)}")
 
-    # Gunakan 50% data awal untuk pencarian parameter ARIMA
-    subset = X[: int(len(X) * 0.5)]
-    best_order = find_best_arima(
-        subset, p_range=range(0, 3), d_range=range(0, 2), q_range=range(0, 3)
+
+async def process_part(
+    part: Tuple[str, str, str], vib_type_id: str, non_vibration_features: str
+):
+    """Process a single part with all its features"""
+    part_id, part_name, part_type = part
+    is_vibration = part_type == vib_type_id
+
+    features = (get_vibration_features if is_vibration else get_non_vibration_features)(
+        non_vibration_features
     )
-    print(f"Best ARIMA order for part_id {part_id}, features_id {features_id}: {best_order}")
 
-    # Membagi data menjadi pelatihan dan pengujian
-    split_index = int(len(X) * 0.66)
-    train, test = X[:split_index], X[split_index:]
-
-    model_fit = train_arima_model(train, best_order)
-
-    n_days = 7
-    future_forecast = model_fit.forecast(steps=n_days)
-
-    # Membuat timestamp untuk 7 hari ke depan
-    last_date = timestamps[-1]
-    future_timestamps = [(last_date + timedelta(days=i + 1)).strftime("%Y-%m-%d") for i in range(n_days)]
-
-    # delete old prediction
-    delete_predicts(part_id, features_id)
-
-    # Simpan hasil prediksi
-    create_predict(part_id, features_id, future_forecast, future_timestamps)
-
-    print(f"ARIMA prediction for part_id: {part_id} finished.")
+    tasks = [
+        train_feature(part_id, feat[0], feat[1], part_name, is_vibration)
+        for feat in features
+    ]
+    await asyncio.gather(*tasks)
 
 
-def index():
-    features = get_all_features() 
-    equipments = get_all_equipment()  
-    time = datetime.now(pytz.timezone("Asia/Jakarta")).strftime("%Y-%m-%d %H:%M:%S")
-    print_log(f"Starting ARIMA prediction at {time}")
-    print(f"Starting ARIMA prediction at {time}")
+async def run_training():
+    """Main training function to be scheduled"""
+    # Constants
+    VIB_TYPE_ID = "b45a04c6-e2e2-465a-ad84-ccefe0f324d2"
+    NON_VIBRATION_FEATURES = "9dcb7e40-ada7-43eb-baf4-2ed584233de7"
 
-    def process(equipment, feature):
-        """Fungsi pembantu untuk dieksekusi secara paralel."""
-        try:
-            execute_arima(equipment, feature)  
-        except Exception as e:
-            print(f"Error processing tag {equipment} and feature {feature}: {e}")
-            print_log(f"Error processing tag {equipment} and feature {feature}: {e}")
+    try:
+        # Get all parts at once
+        parts = get_all_equipment()
+        logger.info(f"Start Training for {len(parts)} parts...")
+        logger.info("=====================================")
 
-    with ThreadPoolExecutor() as executor:
-        try:
-            futures = [
-                executor.submit(process, equipment[0], feature[0])
-                for equipment in equipments
-                for feature in features
-            ]
-            for future in futures:
-                future.result()  
-        except Exception as e:
-            print(f"An exception occurred: {e}")
-            print_log(f"An exception occurred: {e}")
+        # Create tasks for all parts
+        tasks = [
+            process_part(part, VIB_TYPE_ID, NON_VIBRATION_FEATURES) for part in parts
+        ]
 
-    time = datetime.now(pytz.timezone("Asia/Jakarta")).strftime("%Y-%m-%d %H:%M:%S")
-    print_log(f"ARIMA prediction finished at {time}")
-    print(f"ARIMA prediction finished at {time}")
+        # Run all tasks concurrently
+        await asyncio.gather(*tasks)
+        logger.info("Daily training completed successfully")
 
+    except Exception as e:
+        logger.error(f"Error in daily training: {str(e)}")
+
+
+async def main():
+    # Create scheduler
+    scheduler = AsyncIOScheduler()
+
+    # Schedule the training to run daily at 1 AM (adjust timezone and time as needed)
+    scheduler.add_job(
+        run_training,
+        trigger=CronTrigger(
+            hour=1,  # Run at 1 AM
+            minute=0,
+            timezone=pytz.timezone("Asia/Jakarta"),  # Adjust to your timezone
+        ),
+        id="daily_training",
+        name="Daily Training Job",
+        replace_existing=True,
+    )
+
+    try:
+        scheduler.start()
+        logger.info("Scheduler started. Training will run daily at 1 AM Jakarta time.")
+
+        # Keep the script running
+        while True:
+            await asyncio.sleep(60)  # Check every minute
+
+    except (KeyboardInterrupt, SystemExit):
+        logger.info("Scheduler shutting down...")
+        scheduler.shutdown()
+        logger.info("Scheduler shutdown complete")
 
 
 if __name__ == "__main__":
-    # index()        
+    # Set up multiprocessing
+    mp.set_start_method("spawn", force=True)
 
-    while True:
-        date = datetime.now(pytz.timezone("Asia/Jakarta"))
-
-        index()        
-        
-        next_execution = (datetime.now(pytz.timezone("Asia/Jakarta")).replace(hour=5, minute=0, second=0, microsecond=0) + timedelta(days=1))
-        wait_time = (next_execution - datetime.now(pytz.timezone("Asia/Jakarta"))).total_seconds()
-
-        print(f"Next execution will be at {next_execution.strftime('%Y-%m-%d %H:%M:%S')}")
-        print_log(f"Next execution will be at {next_execution.strftime('%Y-%m-%d %H:%M:%S')}")
-
-        time.sleep(wait_time)
-
+    # Run the async main function
+    asyncio.run(main())
