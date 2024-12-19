@@ -62,20 +62,18 @@ def get_tags(*tag_id):
         print(f"An exception occurred {e}")
 
 
-def get_values(part_id):
+def get_values(part_id, features_id):
     try:
-        print(part_id)
-
         conn = get_connection()
         cur = conn.cursor()
         cur.execute(
             """
             SELECT date_time, value
             FROM dl_features_data
-            WHERE part_id = %s
+            WHERE part_id = %s AND features_id = %s
             ORDER BY date_time ASC;
             """,
-            (part_id,),
+            (part_id, features_id),
         )
 
         # cur.execute(
