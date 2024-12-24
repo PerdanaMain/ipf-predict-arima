@@ -1,15 +1,12 @@
+import time
 from model import *
 from non_vibration_train import main as non_vibration_train_main
 from vibration_train import main as vibration_train_main
 import asyncio
-import concurrent.futures
-from typing import List, Tuple
-import multiprocessing as mp
-from apscheduler.schedulers.asyncio import AsyncIOScheduler  # type: ignore
-from apscheduler.triggers.cron import CronTrigger  # type: ignore
+from typing import Tuple
 import logging
-from datetime import datetime
-import pytz
+import schedule  # type: ignore
+
 
 # Set up logging
 logging.basicConfig(
@@ -91,41 +88,31 @@ async def run_training():
     except Exception as e:
         logger.error(f"Error in daily training: {str(e)}")
 
+def task():
+    asyncio.run(run_training())
 
-async def main():
-    # Create scheduler
-    scheduler = AsyncIOScheduler()
+def main():
+    print(f"Starting scheduler at: {datetime.now(pytz.timezone('Asia/Jakarta'))}")
+    print_log(f"Starting scheduler at: {datetime.now(pytz.timezone('Asia/Jakarta'))}")
 
-    # Schedule the training to run daily at 1 AM (adjust timezone and time as needed)
-    scheduler.add_job(
-        run_training,
-        trigger=CronTrigger(
-            hour=1,  # Run at 1 AM
-            minute=0,
-            timezone=pytz.timezone("Asia/Jakarta"),  # Adjust to your timezone
-        ),
-        id="daily_training",
-        name="Daily Training Job",
-        replace_existing=True,
-    )
-
-    try:
-        scheduler.start()
-        logger.info("Scheduler started. Training will run daily at 1 AM Jakarta time.")
-
-        # Keep the script running
-        while True:
-            await asyncio.sleep(60)  # Check every minute
-
-    except (KeyboardInterrupt, SystemExit):
-        logger.info("Scheduler shutting down...")
-        scheduler.shutdown()
-        logger.info("Scheduler shutdown complete")
+    # Schedule task setiap 1 jam
+    schedule.every(12).hours.at(":00").do(task)
+    # schedule.every(6).hour.at(":00").do(feature)
+    
+    while True:
+        try:
+            schedule.run_pending()
+            time.sleep(1)
+        except KeyboardInterrupt:
+            print("Scheduler stopped by user")
+            print_log("Scheduler stopped by user")
+            break
+        except Exception as e:
+            print(f"Scheduler error: {e}")
+            print_log(f"Scheduler error: {e}")
+            time.sleep(60)
 
 
 if __name__ == "__main__":
-    # Set up multiprocessing
-    mp.set_start_method("spawn", force=True)
-
     # Run the async main function
-    asyncio.run(main())
+    main()
