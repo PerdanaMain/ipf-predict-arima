@@ -52,7 +52,6 @@ def get_all_features():
         print_log(f"An exception occurred {e}")
         print(f"An exception occurred {e}")
 
-
 def get_vibration_features(non_vibration_features):
     try:
         conn = get_connection()

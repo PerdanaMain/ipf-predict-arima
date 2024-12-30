@@ -25,20 +25,23 @@ async def train_feature(
     features_id: str,
     features_name: str,
     part_name: str,
-    is_vibration: bool,
 ):
     """Execute training for a single feature asynchronously"""
     logger.info(f"Training {part_name} {features_name}...")
 
     try:
-        if is_vibration:
-            await asyncio.get_event_loop().run_in_executor(
-                None, vibration_train_main, part_id, features_id
-            )
-        else:
-            await asyncio.get_event_loop().run_in_executor(
+        await asyncio.get_event_loop().run_in_executor(
                 None, non_vibration_train_main, part_id, features_id
             )
+        
+        # if is_vibration:
+        #     await asyncio.get_event_loop().run_in_executor(
+        #         None, vibration_train_main, part_id, features_id
+        #     )
+        # else:
+        #     await asyncio.get_event_loop().run_in_executor(
+        #         None, non_vibration_train_main, part_id, features_id
+        #     )
 
         logger.info(f"Finished training {part_name} {features_name}")
         logger.info("=====================================")
@@ -47,18 +50,15 @@ async def train_feature(
 
 
 async def process_part(
-    part: Tuple[str, str, str], vib_type_id: str, non_vibration_features: str
+    part: Tuple[str, str, str],
 ):
     """Process a single part with all its features"""
     part_id, part_name, part_type = part
-    is_vibration = part_type == vib_type_id
 
-    features = (get_vibration_features if is_vibration else get_non_vibration_features)(
-        non_vibration_features
-    )
+    features = get_all_features()
 
     tasks = [
-        train_feature(part_id, feat[0], feat[1], part_name, is_vibration)
+        train_feature(part_id, feat[0], feat[1], part_name)
         for feat in features
     ]
     await asyncio.gather(*tasks)
@@ -67,8 +67,8 @@ async def process_part(
 async def run_training():
     """Main training function to be scheduled"""
     # Constants
-    VIB_TYPE_ID = "b45a04c6-e2e2-465a-ad84-ccefe0f324d2"
-    NON_VIBRATION_FEATURES = "9dcb7e40-ada7-43eb-baf4-2ed584233de7"
+    # VIB_TYPE_ID = "b45a04c6-e2e2-465a-ad84-ccefe0f324d2"
+    # NON_VIBRATION_FEATURES = "9dcb7e40-ada7-43eb-baf4-2ed584233de7"
 
     try:
         # Get all parts at once
@@ -78,7 +78,7 @@ async def run_training():
 
         # Create tasks for all parts
         tasks = [
-            process_part(part, VIB_TYPE_ID, NON_VIBRATION_FEATURES) for part in parts
+            process_part(part) for part in parts
         ]
 
         # Run all tasks concurrently
@@ -115,4 +115,5 @@ def main():
 
 if __name__ == "__main__":
     # Run the async main function
-    main()
+    # main()
+    task()
