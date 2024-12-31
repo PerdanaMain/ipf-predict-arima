@@ -164,16 +164,17 @@ def plot_forecast(actual_data, forecast_df):
         )
 
     plt.show()
+    plt.savefig("forecast.png")
 
 
 def main(part_id, features_id):
     # Mengambil data
     values = get_values(part_id, features_id)
 
-    steps = 24 * 30 # 30 days * 24 hours
+    steps = 24 * 30  # 30 days * 24 hours
     periods = steps + 1
 
-    # Siapkan data dengan dekomposisi
+    # # Siapkan data dengan dekomposisi
     df_decomposed = prepare_data_with_decomposition(values)
 
     # Train model untuk setiap komponen
@@ -190,14 +191,16 @@ def main(part_id, features_id):
             "forecast": forecast,  # date_time dan value ada disini
             "features_id": features_id,
             "part_id": part_id,
-            # "lower_ci": forecast - 2 * forecast.std(),
-            # "upper_ci": forecast + 2 * forecast.std(),
+            "lower_ci": forecast - 2 * forecast.std(),
+            "upper_ci": forecast + 2 * forecast.std(),
         },
         index=forecast_index,
     )
 
     # Plot hasil
     # plot_forecast(df_decomposed.sum(axis=1), forecast_df)
+    # print("last_timestamp: ", last_date)
+    # print("forcast_df: ", forecast_df.head())
     save_predictions_to_db(forecast_df)
 
     # Return hasil prediksi
@@ -205,6 +208,4 @@ def main(part_id, features_id):
 
 
 if __name__ == "__main__":
-    result_df = main(
-        "c3ac118c-4f47-4794-bcb1-1af06045d0ab", "5765a11a-2f89-45dc-a37b-46d384a1ff9e"
-    )
+    main("e1d5179b-f7c9-449d-ad49-047d13fb5acc", "9dcb7e40-ada7-43eb-baf4-2ed584233de7")
