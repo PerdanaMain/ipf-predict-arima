@@ -52,6 +52,7 @@ def get_all_features():
         print_log(f"An exception occurred {e}")
         print(f"An exception occurred {e}")
 
+
 def get_vibration_features(non_vibration_features):
     try:
         conn = get_connection()
@@ -146,7 +147,7 @@ def save_predictions_to_db(forecast_df):
         # Hapus prediksi yang sudah ada
         delete_query = """
             DELETE FROM dl_predict 
-            WHERE part_id = %s AND features_id = %s AND date_time > CURRENT_TIMESTAMP
+            WHERE part_id = %s AND features_id = %s
         """
 
         # Insert data prediksi baru
