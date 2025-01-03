@@ -2,6 +2,7 @@ from concurrent.futures import ProcessPoolExecutor
 import time
 from model import *
 from non_vibration_train import main as non_vibration_train_main
+from predict_detail import main as predict_detail
 import asyncio
 import logging
 import schedule  # type: ignore
@@ -38,9 +39,12 @@ async def train_all_parts():
         parts = get_parts()
         # Membuat list of tasks
         tasks = [start_training(part[0]) for part in parts]
+        tasks2 = [predict_detail(part[0]) for part in parts]
         # Menjalankan semua tasks secara concurrent
-        await asyncio.gather(*tasks)
-        logger.info("All training tasks completed")
+        # await asyncio.gather(*tasks)
+        # logger.info("All training tasks completed")
+        await asyncio.gather(*tasks2)
+        logger.info("All prediction tasks completed")
     except Exception as e:
         logger.error(f"Error in train_all_parts: {e}")
 

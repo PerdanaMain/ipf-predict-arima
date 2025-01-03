@@ -207,3 +207,50 @@ def save_predictions_to_db(forecast_df):
     finally:
         cur.close()
         conn.close()
+
+
+def get_predict_values(part_id):
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+
+        query = "SELECT id, pfi_value, date_time FROM dl_predict WHERE part_id = %s"
+        cur.execute(query, (part_id,))
+        details = cur.fetchall()
+        return details
+    except Exception as e:
+        print(f"An exception occurred: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+
+def get_detail(part_id):
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+
+        query = "SELECT id, part_id, upper_threshold, lower_threshold, predict_status, time_failure FROM pf_details WHERE part_id = %s"
+        cur.execute(query, (part_id,))
+        details = cur.fetchone()
+        return details
+    except Exception as e:
+        print(f"An exception occurred: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+
+def update_detail(part_id, status, datetime):
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+
+        query = "UPDATE pf_details SET predict_status = %s, time_failure = %s WHERE part_id = %s"
+        cur.execute(query, (status, datetime, part_id))
+        conn.commit()
+    except Exception as e:
+        print(f"An exception occurred: {e}")
+    finally:
+        if conn:
+            conn.close()
