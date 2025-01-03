@@ -1,5 +1,7 @@
+import array
 from concurrent.futures import ProcessPoolExecutor
 import time
+from tracemalloc import start
 from model import *
 from non_vibration_train import main as non_vibration_train_main
 from predict_detail import main as predict_detail
@@ -20,31 +22,31 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-async def start_training(part_id):
+async def start_training(part):
     features_id = "9dcb7e40-ada7-43eb-baf4-2ed584233de7"
     try:
-        # Menjalankan training dalam process pool karena CPU-intensive
-        loop = asyncio.get_event_loop()
-        with ProcessPoolExecutor() as pool:
-            await loop.run_in_executor(
-                pool, non_vibration_train_main, part_id, features_id
-            )
-        logger.info(f"Training completed for part_id: {part_id}")
+        await asyncio.get_event_loop().run_in_executor(
+            None, non_vibration_train_main, part[0], features_id
+        )
+
+        logger.info(f"Training completed for part: {part[1]}")
     except Exception as e:
-        logger.error(f"Error training part_id {part_id}: {e}")
+        logger.error(f"Error training part_id {part[1]}: {e}")
 
 
 async def train_all_parts():
     try:
         parts = get_parts()
-        # Membuat list of tasks
-        tasks = [start_training(part[0]) for part in parts]
+        logger.info(f"Start Training for {len(parts)} parts...")
+        logger.info("=====================================")
+
+        tasks = [start_training(part) for part in parts]
         tasks2 = [predict_detail(part[0]) for part in parts]
-        # Menjalankan semua tasks secara concurrent
-        # await asyncio.gather(*tasks)
-        # logger.info("All training tasks completed")
+
+        await asyncio.gather(*tasks)
         await asyncio.gather(*tasks2)
-        logger.info("All prediction tasks completed")
+
+        logger.info("All training tasks completed")
     except Exception as e:
         logger.error(f"Error in train_all_parts: {e}")
 
