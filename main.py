@@ -25,8 +25,12 @@ logger = logging.getLogger(__name__)
 async def start_training(part):
     features_id = "9dcb7e40-ada7-43eb-baf4-2ed584233de7"
     try:
+        # run sequential
         await asyncio.get_event_loop().run_in_executor(
             None, non_vibration_train_main, part[0], features_id
+        )
+        await asyncio.get_event_loop().run_in_executor(
+            None, predict_detail, part[0]
         )
 
         logger.info(f"Training completed for part: {part[1]}")
@@ -41,10 +45,8 @@ async def train_all_parts():
         logger.info("=====================================")
 
         tasks = [start_training(part) for part in parts]
-        tasks2 = [predict_detail(part[0]) for part in parts]
 
         await asyncio.gather(*tasks)
-        await asyncio.gather(*tasks2)
 
         logger.info("All training tasks completed")
     except Exception as e:

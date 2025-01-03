@@ -25,8 +25,7 @@ def checking_status(predict_values, detail):
     return result
 
 
-def main():
-    part_id = "4909d836-c26c-4f39-ba64-7cc9cff5e400"
+def main(part_id):
     print("mengambil data ...")
     detail = get_detail(part_id)
     predict_values = get_predict_values(part_id)
