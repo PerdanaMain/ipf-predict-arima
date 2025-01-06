@@ -230,7 +230,7 @@ def get_detail(part_id):
         conn = get_connection()
         cur = conn.cursor()
 
-        query = "SELECT id, part_id, upper_threshold, lower_threshold, predict_status, time_failure FROM pf_details WHERE part_id = %s"
+        query = "SELECT id, part_id, upper_threshold, lower_threshold, predict_status, time_failure, one_hundred_percent_condition FROM pf_details WHERE part_id = %s"
         cur.execute(query, (part_id,))
         details = cur.fetchone()
         return details
@@ -241,7 +241,7 @@ def get_detail(part_id):
             conn.close()
 
 
-def update_detail(part_id, status, datetime, predict_value):
+def update_detail(part_id, status, datetime, predict_value,):
     try:
         conn = get_connection()
         cur = conn.cursor()
@@ -254,3 +254,44 @@ def update_detail(part_id, status, datetime, predict_value):
     finally:
         if conn:
             conn.close()
+
+def update_percent_condition(part_id, percent_condition):
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+
+        query = "UPDATE pf_details SET percent_condition = %s WHERE part_id = %s"
+        cur.execute(query, (percent_condition, part_id))
+        conn.commit()
+    except Exception as e:
+        print(f"An exception occurred: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+def get_current_feature_value(part_id, feature_id):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Query untuk mengambil data
+        query = """
+            SELECT * FROM dl_features_data WHERE part_id = %s AND features_id = %s
+            ORDER BY date_time DESC LIMIT 1
+        """
+
+        cursor.execute(query, (part_id, feature_id))
+
+        # Mendapatkan nama kolom
+        columns = [col[0] for col in cursor.description]
+
+        # Mendapatkan hasil dari query
+        data = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        # Mengonversi setiap tuple menjadi dictionary
+        return data[3]
+    except Exception as e:
+        raise Exception(f"Error: {e}")
