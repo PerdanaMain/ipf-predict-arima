@@ -58,7 +58,7 @@ def main(part_id):
         future_date = current_date + timedelta(days=7)
         failure_date = predicted_failed[0]["datetime"]
 
-        if current_date <= failure_date <= future_date:
+        if failure_date < current_date or (current_date <= failure_date <= future_date):
             update_detail(
                 part_id, 
                 "predicted fail", 
