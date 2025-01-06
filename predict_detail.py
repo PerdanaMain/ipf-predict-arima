@@ -32,9 +32,19 @@ def percent_calculation(part_id, feature_id):
     range = abs(one_percent_condition - upper_threshold)
     current_value = get_current_feature_value(part_id, feature_id=feature_id)
 
+    # Hitung percent_condition
     percent_condition = (abs(current_value - upper_threshold)) / range * 100
+    
+    # Interpolasi jika melebihi 100%
+    if percent_condition > 100:
+        # Hitung selisih dengan 100%
+        excess = percent_condition - 100
+        # Terapkan interpolasi linear sederhana
+        interpolated_percent = 100 + (excess * 0.1)  # Faktor 0.1 memperlambat kenaikan
+        percent_condition = min(interpolated_percent, 100)  # Pastikan tidak melebihi 100
+    
     percent_condition = round(percent_condition, 2)
-
+    
     update_percent_condition(part_id, percent_condition)
 
     

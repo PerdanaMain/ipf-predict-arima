@@ -184,6 +184,7 @@ def save_predictions_to_db(forecast_df):
         for _, row in df_to_save.iterrows():
             predict_id = str(uuid.uuid4())
             now = datetime.now(pytz.timezone("Asia/Jakarta"))
+            print("row datetime: ",row["date_time"])
             cur.execute(
                 insert_query,
                 (
