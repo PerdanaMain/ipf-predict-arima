@@ -38,10 +38,10 @@ def main(part_id):
     if predicted_failed:
         predicted_failed = [predicted_failed[0]]
         update_detail(
-            part_id, predicted_failed[0]["status"], predicted_failed[0]["datetime"]
+            part_id, predicted_failed[0]["status"], predicted_failed[0]["datetime"], predicted_failed[0]["value"]
         )
     else:
-        update_detail(part_id, "normal", None)
+        update_detail(part_id, "normal", None, None)
 
     print("done")
 

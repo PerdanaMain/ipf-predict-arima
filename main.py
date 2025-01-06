@@ -26,9 +26,9 @@ async def start_training(part):
     features_id = "9dcb7e40-ada7-43eb-baf4-2ed584233de7"
     try:
         # run sequential
-        await asyncio.get_event_loop().run_in_executor(
-            None, non_vibration_train_main, part[0], features_id
-        )
+        # await asyncio.get_event_loop().run_in_executor(
+        #     None, non_vibration_train_main, part[0], features_id
+        # )
         await asyncio.get_event_loop().run_in_executor(
             None, predict_detail, part[0]
         )

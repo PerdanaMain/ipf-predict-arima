@@ -241,13 +241,13 @@ def get_detail(part_id):
             conn.close()
 
 
-def update_detail(part_id, status, datetime):
+def update_detail(part_id, status, datetime, predict_value):
     try:
         conn = get_connection()
         cur = conn.cursor()
 
-        query = "UPDATE pf_details SET predict_status = %s, time_failure = %s WHERE part_id = %s"
-        cur.execute(query, (status, datetime, part_id))
+        query = "UPDATE pf_details SET predict_status = %s, time_failure = %s, predict_value= %s WHERE part_id = %s"
+        cur.execute(query, (status, datetime,predict_value, part_id))
         conn.commit()
     except Exception as e:
         print(f"An exception occurred: {e}")
