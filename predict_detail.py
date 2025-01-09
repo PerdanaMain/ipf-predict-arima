@@ -16,7 +16,9 @@ def checking_status(predict_values, detail):
         dt = value[2]  # datetime ada di index 2
         # print(value[1] < lower_threshold)
 
-        if predict_value > upper_threshold or predict_value < lower_threshold:
+        if predict_value >= lower_threshold and predict_value <= upper_threshold:
+            result.append({"datetime": dt, "status": "warning", "value": predict_value})
+        elif predict_value > upper_threshold:
             result.append(
                 {"datetime": dt, "status": "predicted failed", "value": predict_value }
             )
@@ -29,24 +31,16 @@ def percent_calculation(part_id, feature_id):
     detail = get_detail(part_id)
     upper_threshold = detail[2]
     one_percent_condition = detail[6]
-    range = abs(one_percent_condition - upper_threshold)
+    
     current_value = get_current_feature_value(part_id, feature_id=feature_id)
 
     # Hitung percent_condition
-    percent_condition = (abs(current_value - upper_threshold)) / range * 100
+    percent_condition = abs(upper_threshold - current_value) / abs(upper_threshold - one_percent_condition) * 100
     
     # Interpolasi jika melebihi 100%
-    if percent_condition > 100:
-        # Hitung selisih dengan 100%
-        excess = percent_condition - 100
-        # Terapkan interpolasi linear sederhana
-        interpolated_percent = 100 + (excess * 0.1)  # Faktor 0.1 memperlambat kenaikan
-        percent_condition = min(interpolated_percent, 100)  # Pastikan tidak melebihi 100
-    
     percent_condition = round(percent_condition, 2)
     
     update_percent_condition(part_id, percent_condition)
-
     
 
 def main(part_id):
@@ -60,32 +54,22 @@ def main(part_id):
 
     # select predicted failed
     predicted_failed = [item for item in result if item["status"] == "predicted failed"]
-    if predicted_failed:
-        predicted_failed = [predicted_failed[0]]
-
-        # set fail if current date until 7 days
-        current_date = datetime.now()
-        future_date = current_date + timedelta(days=7)
-        failure_date = predicted_failed[0]["datetime"]
-
-        if failure_date < current_date or (current_date <= failure_date <= future_date):
-            update_detail(
-                part_id, 
-                "predicted fail", 
-                predicted_failed[0]["datetime"], 
-                predicted_failed[0]["value"]
-            )
-        else:
-            update_detail(
-                part_id,
-                "warning",
-                predicted_failed[0]["datetime"], 
-                predicted_failed[0]["value"]
-            )
+    predicted_warning = [item for item in result if item["status"] == "warning"]
+    
+    # select once
+    predicted_failed = [predicted_failed[0]] if predicted_failed else []
+    predicted_warning = [predicted_warning[0]] if predicted_warning else []
+    
+    print(result)
+    
+    if len(predicted_failed) != 0:
+        update_detail(part_id, "predicted failed", predicted_failed[0]["datetime"], predicted_failed[0]["value"])
+    elif len(predicted_warning) != 0:
+        update_detail(part_id, "warning", predicted_warning[0]["datetime"], predicted_warning[0]["value"])
     else:
-        update_detail(part_id, "normal", None, None)
-
-    print("menghitung persentase kondisi ...")
+        update_detail(part_id, "normal", None, None)    
+    
+    # print("menghitung persentase kondisi ...")
     percent_calculation(part_id, features_id)
 
     print("done")
@@ -93,4 +77,6 @@ def main(part_id):
 
 if __name__ == "__main__":
     # main()
-    percent_calculation("64492e3f-8e1f-4eb4-b9ea-8a2ead652c8e", "9dcb7e40-ada7-43eb-baf4-2ed584233de7")
+    main("5b7a8957-191d-424b-b359-802617100a1a")
+    # percent_calculation("64492e3f-8e1f-4eb4-b9ea-8a2ead652c8e", "9dcb7e40-ada7-43eb-baf4-2ed584233de7")
+    # print("test command")
