@@ -9,7 +9,7 @@ def get_parts():
     try:
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute(f"SELECT id, part_name, type_id FROM pf_parts WHERE  web_id IS NOT NULL")
+        cur.execute(f"SELECT id, part_name, type_id FROM pf_parts WHERE web_id IS NOT NULL")
         tags = cur.fetchall()
         cur.close()
         conn.close()

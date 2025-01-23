@@ -46,6 +46,7 @@ async def start_non_dcs_training(part):
         await asyncio.get_event_loop().run_in_executor(
             None, vibration_train_main, part[0], features_id
         )
+        
         await asyncio.get_event_loop().run_in_executor(
             None, predict_detail, part[0]
         )
@@ -57,13 +58,17 @@ async def train_all_parts():
     try:
         parts = get_parts()
         non_dcs = get_non_dcs_parts()
-        logger.info(f"Start Training for {len(parts)} parts...")
+        logger.info(f"Start Training for {len(parts)} parts and {len(non_dcs)}  non dcs parts")
         logger.info("=====================================")
 
         tasks = [start_training(part) for part in parts]
         second_tasks = [start_non_dcs_training(part) for part in non_dcs]
 
-        await asyncio.gather(*tasks)
+        # logger.info("=====================================")
+        # logger.info("Start Training for dcs parts")
+        # await asyncio.gather(*tasks)
+        logger.info("=====================================")
+        logger.info("Start Training for non dcs parts")
         await asyncio.gather(*second_tasks)
 
         logger.info("All training tasks completed")

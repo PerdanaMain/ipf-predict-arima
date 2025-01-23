@@ -77,6 +77,6 @@ def main(part_id):
 
 if __name__ == "__main__":
     # main()
-    main("5b7a8957-191d-424b-b359-802617100a1a")
+    main("0d25b4e6-972b-4c40-b964-d17e09a3d3fa")
     # percent_calculation("64492e3f-8e1f-4eb4-b9ea-8a2ead652c8e", "9dcb7e40-ada7-43eb-baf4-2ed584233de7")
     # print("test command")
