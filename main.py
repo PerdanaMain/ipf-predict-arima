@@ -4,6 +4,7 @@ import time
 from tracemalloc import start
 from model import *
 from non_vibration_train import main as non_vibration_train_main
+from vibration_train import main as vibration_train_main
 from predict_detail import main as predict_detail
 import asyncio
 import logging
@@ -38,15 +39,32 @@ async def start_training(part):
         logger.error(f"Error training part_id {part[1]}: {e}")
 
 
+async def start_non_dcs_training(part):
+    try:
+        features_id = "9dcb7e40-ada7-43eb-baf4-2ed584233de7"
+        
+        await asyncio.get_event_loop().run_in_executor(
+            None, vibration_train_main, part[0], features_id
+        )
+        await asyncio.get_event_loop().run_in_executor(
+            None, predict_detail, part[0]
+        )
+        logger.info(f"Training completed for part: {part[1]}")
+    except Exception as e:
+        logger.error(f"Error training part_id {part[1]}: {e}")
+
 async def train_all_parts():
     try:
         parts = get_parts()
+        non_dcs = get_non_dcs_parts()
         logger.info(f"Start Training for {len(parts)} parts...")
         logger.info("=====================================")
 
         tasks = [start_training(part) for part in parts]
+        second_tasks = [start_non_dcs_training(part) for part in non_dcs]
 
         await asyncio.gather(*tasks)
+        await asyncio.gather(*second_tasks)
 
         logger.info("All training tasks completed")
     except Exception as e:
@@ -82,5 +100,5 @@ def main():
 
 if __name__ == "__main__":
     # Run the async main function
-    main()
-    # task()
+    # main()
+    task()

@@ -9,7 +9,7 @@ def get_parts():
     try:
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute(f"SELECT id, part_name, type_id FROM pf_parts")
+        cur.execute(f"SELECT id, part_name, type_id FROM pf_parts WHERE  web_id IS NOT NULL")
         tags = cur.fetchall()
         cur.close()
         conn.close()
@@ -17,6 +17,19 @@ def get_parts():
     except Exception as e:
         print_log(f"An exception occurred {e}")
         print(f"An exception occurred: {e}")
+        
+def get_non_dcs_parts():
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(f"SELECT id, part_name, type_id FROM pf_parts WHERE  web_id IS NULL")
+        tags = cur.fetchall()
+        cur.close()
+        conn.close()
+        return tags
+    except Exception as e:
+        print_log(f"An exception occurred {e}")
+        print(f"An exception occurred: {e}")   
 
 
 def get_part(part_id):
