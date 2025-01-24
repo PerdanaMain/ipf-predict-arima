@@ -5,6 +5,8 @@ import numpy as np
 from statsmodels.tsa.arima.model import ARIMA  # type: ignore
 from statsmodels.tsa.seasonal import seasonal_decompose  # type: ignore
 import matplotlib.pyplot as plt
+from predict_detail import main as predict_detail
+
 
 
 def prepare_data(values):
@@ -202,6 +204,7 @@ def main(part_id, features_id):
     # print("last_timestamp: ", last_date)
     # print("forcast_df: ", forecast_df.head())
     save_predictions_to_db(forecast_df)
+    predict_detail(part_id)
 
     # Return hasil prediksi
     return forecast_df

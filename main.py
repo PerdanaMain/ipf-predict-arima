@@ -1,11 +1,7 @@
-import array
-from concurrent.futures import ProcessPoolExecutor
 import time
-from tracemalloc import start
 from model import *
 from non_vibration_train import main as non_vibration_train_main
 from vibration_train import main as vibration_train_main
-from predict_detail import main as predict_detail
 import asyncio
 import logging
 import schedule  # type: ignore
@@ -30,9 +26,6 @@ async def start_training(part):
         await asyncio.get_event_loop().run_in_executor(
             None, non_vibration_train_main, part[0], features_id
         )
-        await asyncio.get_event_loop().run_in_executor(
-            None, predict_detail, part[0]
-        )
 
         logger.info(f"Training completed for part: {part[1]}")
     except Exception as e:
@@ -47,9 +40,6 @@ async def start_non_dcs_training(part):
             None, vibration_train_main, part[0], features_id
         )
         
-        await asyncio.get_event_loop().run_in_executor(
-            None, predict_detail, part[0]
-        )
         logger.info(f"Training completed for part: {part[1]}")
     except Exception as e:
         logger.error(f"Error training part_id {part[1]}: {e}")
@@ -105,5 +95,5 @@ def main():
 
 if __name__ == "__main__":
     # Run the async main function
-    main()
-    # task()
+    # main()
+    task()
