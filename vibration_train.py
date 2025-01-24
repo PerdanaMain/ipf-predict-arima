@@ -187,7 +187,7 @@ def main(part_id, features_id):
     # Get data
     values = get_values(part_id, features_id)
 
-    steps = 12  # 12 months forecast
+    steps = 6  # 12 months forecast
     periods = steps + 1
 
     # Prepare data with decomposition

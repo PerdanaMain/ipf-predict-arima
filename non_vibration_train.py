@@ -171,7 +171,7 @@ def main(part_id, features_id):
     # Mengambil data
     values = get_values(part_id, features_id)
 
-    steps = 24 * 30  # 30 days * 24 hours
+    steps = 24 * 30 * 6  # 30 days * 24 hours * 6 months
     periods = steps + 1
 
     # # Siapkan data dengan dekomposisi
