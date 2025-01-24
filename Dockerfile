@@ -17,7 +17,7 @@ WORKDIR /app
 COPY pyproject.toml poetry.lock ./
 
 # Install dependencies
-RUN poetry install --no-dev --no-root
+RUN poetry install --only main --no-root
 
 # Use a new slim image for the runtime
 FROM python:3.11-slim as runtime

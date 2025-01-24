@@ -270,15 +270,15 @@ def update_detail(part_id, status, time_failure, predict_value,):
         if conn:
             conn.close()
 
-def update_percent_condition(part_id, percent_condition):
+def update_percent_condition(part_id, percent_condition, warning_percent_condition):
     try:
         conn = get_connection()
         cur = conn.cursor()
         now = datetime.now(pytz.timezone("Asia/Jakarta"))
 
 
-        query = "UPDATE pf_details SET percent_condition = %s, updated_at = %s WHERE part_id = %s"
-        cur.execute(query, (percent_condition, now, part_id))
+        query = "UPDATE pf_details SET percent_condition = %s, warning_percent_condition = %s, updated_at = %s WHERE part_id = %s"
+        cur.execute(query, (percent_condition, warning_percent_condition, now, part_id))
         conn.commit()
     except Exception as e:
         print(f"An exception occurred: {e}")

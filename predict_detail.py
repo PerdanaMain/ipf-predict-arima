@@ -29,18 +29,22 @@ def checking_status(predict_values, detail):
 
 def percent_calculation(part_id, feature_id):
     detail = get_detail(part_id)
-    upper_threshold = detail[2]
-    one_percent_condition = detail[6]
+    upper_threshold = detail[2]  # fail threshold
+    lower_threshold = detail[3]  # warning threshold
+    one_percent_condition = detail[6]  # normal value
     
     current_value = get_current_feature_value(part_id, feature_id=feature_id)
 
-    # Hitung percent_condition
+    # Hitung percent_condition menggunakan batas fail
     percent_condition = abs(upper_threshold - current_value) / abs(upper_threshold - one_percent_condition) * 100
     
-    # Interpolasi jika melebihi 100%
-    percent_condition = round(percent_condition, 2)
+    # Set warning_percent sama dengan percent_condition jika current_value dalam range normal
+    warning_percent = percent_condition if current_value <= lower_threshold else 100
     
-    update_percent_condition(part_id, percent_condition)
+    percent_condition = round(percent_condition, 2)
+    warning_percent = round(warning_percent, 2)
+    
+    update_percent_condition(part_id, percent_condition, warning_percent)
     
 
 def main(part_id):
