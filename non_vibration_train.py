@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta
 from model import *
 import pandas as pd  # type: ignore
-import numpy as np
+import numpy as np  # type: ignore
 from statsmodels.tsa.arima.model import ARIMA  # type: ignore
 from statsmodels.tsa.seasonal import seasonal_decompose  # type: ignore
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt # type: ignore
 from predict_detail import main as predict_detail
 
 
@@ -204,7 +204,7 @@ def main(part_id, features_id):
     # print("last_timestamp: ", last_date)
     # print("forcast_df: ", forecast_df.head())
     save_predictions_to_db(forecast_df)
-    predict_detail(part_id)
+    predict_detail(part_id=part_id)
 
     # Return hasil prediksi
     return forecast_df

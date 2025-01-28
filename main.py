@@ -5,7 +5,7 @@ from vibration_train import main as vibration_train_main
 import asyncio
 import logging
 import schedule  # type: ignore
-
+from predict_detail import main as predict_detail
 
 # Set up logging
 logging.basicConfig(

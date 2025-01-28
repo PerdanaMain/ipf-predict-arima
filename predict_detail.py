@@ -58,24 +58,13 @@ def main(part_id):
 
     # select predicted failed
     predicted_failed = [item for item in result if item["status"] == "predicted failed"]
-    predicted_warning = [item for item in result if item["status"] == "warning"]
     
     # select once
     predicted_failed = [predicted_failed[0]] if predicted_failed else []
-    predicted_warning = [predicted_warning[0]] if predicted_warning else []
-    
-    print(result)
     
     if len(predicted_failed) != 0:
         update_detail(part_id, "predicted failed", predicted_failed[0]["datetime"], predicted_failed[0]["value"])
-    elif len(predicted_warning) != 0:
-        update_detail(part_id, "warning", predicted_warning[0]["datetime"], predicted_warning[0]["value"])
-    else:
-        update_detail(part_id, "normal", None, None)    
     
-    # print("menghitung persentase kondisi ...")
-    percent_calculation(part_id, features_id)
-
     print("done")
 
 
