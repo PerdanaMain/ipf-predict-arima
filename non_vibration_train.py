@@ -4,9 +4,8 @@ import pandas as pd  # type: ignore
 import numpy as np  # type: ignore
 from statsmodels.tsa.arima.model import ARIMA  # type: ignore
 from statsmodels.tsa.seasonal import seasonal_decompose  # type: ignore
-import matplotlib.pyplot as plt # type: ignore
+import matplotlib.pyplot as plt  # type: ignore
 from predict_detail import main as predict_detail
-
 
 
 def prepare_data(values):
@@ -169,15 +168,39 @@ def plot_forecast(actual_data, forecast_df):
     plt.savefig("forecast.png")
 
 
+def clean_anomali_data(values, part_id):
+    detail = get_detail(part_id=part_id)
+    upper_threshold = detail[2]
+    trip = (upper_threshold / 2 * 1.5) + upper_threshold
+
+    print("upper threshold: ", upper_threshold)
+    print("trip: ", trip)
+
+    print("len values before cleansing: ", len(values))
+
+    data = []
+
+    for value in values:
+        if value[1] > trip:
+            continue
+        else:
+            data.append(value)
+
+    print("len values after cleansing: ", len(data))
+    return data
+
+
 def main(part_id, features_id):
     # Mengambil data
     values = get_values(part_id, features_id)
+
+    data = clean_anomali_data(values=values, part_id=part_id)
 
     steps = 24 * 30 * 6  # 30 days * 24 hours * 6 months
     periods = steps + 1
 
     # # Siapkan data dengan dekomposisi
-    df_decomposed = prepare_data_with_decomposition(values)
+    df_decomposed = prepare_data_with_decomposition(data)
 
     # Train model untuk setiap komponen
     models = train_arima_with_decomposition(df_decomposed)
@@ -206,9 +229,9 @@ def main(part_id, features_id):
     save_predictions_to_db(forecast_df)
     predict_detail(part_id=part_id)
 
-    # Return hasil prediksi
+    # # Return hasil prediksi
     return forecast_df
 
 
 if __name__ == "__main__":
-    main("e1d5179b-f7c9-449d-ad49-047d13fb5acc", "9dcb7e40-ada7-43eb-baf4-2ed584233de7")
+    main("8596131a-57ff-4586-9117-6566b3336cb4", "9dcb7e40-ada7-43eb-baf4-2ed584233de7")
