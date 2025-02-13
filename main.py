@@ -75,9 +75,8 @@ def main():
     print(f"Starting scheduler at: {datetime.now(pytz.timezone('Asia/Jakarta'))}")
     print_log(f"Starting scheduler at: {datetime.now(pytz.timezone('Asia/Jakarta'))}")
 
-    # Schedule task setiap 1 jam
-    schedule.every(12).hours.at(":00").do(task)
-    # schedule.every(6).hour.at(":00").do(feature)
+    # schedule task every day at 00:00
+    schedule.every().day.at("00:00").do(task)
 
     while True:
         try:
