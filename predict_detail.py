@@ -55,13 +55,13 @@ def main(part_id):
 
     print("menghitung status ...")
     result = checking_status(predict_values, detail)
-
+    
     # select predicted failed
     predicted_failed = [item for item in result if item["status"] == "predicted failed"]
     
     # select once
-    predicted_failed = [predicted_failed[0]] if predicted_failed else []
-    
+    predicted_failed = [predicted_failed[0]] if predicted_failed is not None else []
+
     if len(predicted_failed) != 0:
         update_detail(part_id, "predicted failed", predicted_failed[0]["datetime"], predicted_failed[0]["value"])
     
@@ -70,6 +70,6 @@ def main(part_id):
 
 if __name__ == "__main__":
     # main()
-    main("0d25b4e6-972b-4c40-b964-d17e09a3d3fa")
+    main("a8d229be-fab1-434c-ae62-23b42ee80608")
     # percent_calculation("64492e3f-8e1f-4eb4-b9ea-8a2ead652c8e", "9dcb7e40-ada7-43eb-baf4-2ed584233de7")
     # print("test command")

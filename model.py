@@ -228,7 +228,7 @@ def get_predict_values(part_id):
         conn = get_connection()
         cur = conn.cursor()
 
-        query = "SELECT id, pfi_value, date_time FROM dl_predict WHERE part_id = %s"
+        query = "SELECT id, pfi_value, date_time FROM dl_predict WHERE part_id = %s order by date_time asc"
         cur.execute(query, (part_id,))
         details = cur.fetchall()
         return details
