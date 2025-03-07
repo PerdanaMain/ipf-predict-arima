@@ -6,6 +6,11 @@ import asyncio
 import logging
 import schedule  # type: ignore
 from predict_detail import main as predict_detail
+from flask import Flask, request, jsonify # type: ignore
+from config import Config
+
+app = Flask(__name__)
+
 
 # Set up logging
 logging.basicConfig(
@@ -91,8 +96,28 @@ def main():
             print_log(f"Scheduler error: {e}")
             time.sleep(60)
 
+@app.route("/", methods=["GET"])
+def hai():
+    return jsonify({"message": "Welcome to the API!"})
+
+@app.route("/train", methods=["GET"])
+def home():
+    try:
+        task()
+        return (
+            jsonify(
+                {
+                    "message": f"Train completed at: {datetime.now(pytz.timezone('Asia/Jakarta'))}"
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
+    app.run(debug=True, port=Config.PORT, host='0.0.0.0')
+    
     # Run the async main function
     # main()
-    task()
+    # task()

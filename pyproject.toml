@@ -17,6 +17,7 @@ pandas = "^2.2.3"
 joblib = "^1.4.2"
 apscheduler = "^3.11.0"
 schedule = "^1.2.2"
+flask-restful = "^0.3.10"
 
 
 [build-system]
