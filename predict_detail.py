@@ -10,7 +10,7 @@ def checking_status(predict_values, detail):
     lower_threshold = detail[3]
 
     result = []
-
+    
     for value in predict_values:
         predict_value = value[1]  # nilai prediksi ada di index 1
         dt = value[2]  # datetime ada di index 2
@@ -60,7 +60,9 @@ def main(part_id):
     predicted_failed = [item for item in result if item["status"] == "predicted failed"]
     
     # select once
-    predicted_failed = [predicted_failed[0]] if predicted_failed is not None else []
+    # predicted_failed = [predicted_failed[0]] if predicted_failed is not None else []
+    
+    print(len(predicted_failed) != 0)
 
     if len(predicted_failed) != 0:
         update_detail(part_id, "predicted failed", predicted_failed[0]["datetime"], predicted_failed[0]["value"])
@@ -69,7 +71,6 @@ def main(part_id):
 
 
 if __name__ == "__main__":
-    # main()
-    main("a8d229be-fab1-434c-ae62-23b42ee80608")
+    main("28516795-f22d-4cbc-9469-b720f5d881d7")
     # percent_calculation("64492e3f-8e1f-4eb4-b9ea-8a2ead652c8e", "9dcb7e40-ada7-43eb-baf4-2ed584233de7")
     # print("test command")

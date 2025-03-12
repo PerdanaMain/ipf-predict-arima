@@ -149,7 +149,7 @@ def get_values(part_id, features_id):
         print(f"An exception occurred {e}")
 
 
-def save_predictions_to_db(forecast_df):
+def save_predictions_to_db(forecast_df, part_id, features_id):
     """
     Menyimpan hasil prediksi ke database sesuai struktur tabel
     """
@@ -188,8 +188,7 @@ def save_predictions_to_db(forecast_df):
 
         # Hapus prediksi lama
         cur.execute(
-            delete_query,
-            (df_to_save["part_id"].iloc[0], df_to_save["features_id"].iloc[0]),
+            delete_query, (part_id, features_id)
         )
 
         # Insert prediksi baru

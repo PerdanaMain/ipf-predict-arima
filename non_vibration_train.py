@@ -226,7 +226,7 @@ def main(part_id, features_id):
     # plot_forecast(df_decomposed.sum(axis=1), forecast_df)
     # print("last_timestamp: ", last_date)
     # print("forcast_df: ", forecast_df.head())
-    save_predictions_to_db(forecast_df)
+    save_predictions_to_db(forecast_df, part_id, features_id)
     predict_detail(part_id=part_id)
 
     # # Return hasil prediksi
@@ -234,4 +234,4 @@ def main(part_id, features_id):
 
 
 if __name__ == "__main__":
-    main("8596131a-57ff-4586-9117-6566b3336cb4", "9dcb7e40-ada7-43eb-baf4-2ed584233de7")
+    main("28516795-f22d-4cbc-9469-b720f5d881d7", "9dcb7e40-ada7-43eb-baf4-2ed584233de7")
