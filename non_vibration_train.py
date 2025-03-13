@@ -6,6 +6,8 @@ from statsmodels.tsa.arima.model import ARIMA  # type: ignore
 from statsmodels.tsa.seasonal import seasonal_decompose  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
 from predict_detail import main as predict_detail
+import os
+import pickle
 
 
 def prepare_data(values):
@@ -79,38 +81,43 @@ def find_best_parameters(data):
     return best_params or (1, 1, 1)  # Default parameters if optimization fails
 
 
-def train_arima_with_decomposition(data):
+def load_arima_models(model_dir="models"):
     """
-    Melatih model ARIMA untuk setiap komponen
+    Memuat model ARIMA dari file pickle
     """
     models = {}
-
     for component in ["trend", "seasonal", "residual"]:
-        best_params = find_best_parameters(data[component])
-        print(f"Parameter terbaik untuk {component}: {best_params}")
-
-        model = ARIMA(data[component], order=best_params)
-        fitted_model = model.fit()
-        models[component] = fitted_model
+        model_filename = os.path.join(model_dir, f"arima_{component}_model.pkl")
+        with open(model_filename, "rb") as file:
+            models[component] = pickle.load(file)
+        print(f"Model untuk {component} dimuat dari {model_filename}")
 
     return models
 
 
-def forecast_with_decomposition(models, steps=720):  # 30 days * 24 hours = 720 steps
+def forecast_with_decomposition(models, steps=30):
     """
-    Membuat prediksi 30 hari dengan menggabungkan hasil prediksi setiap komponen
+    Membuat prediksi dengan model ARIMA yang telah dimuat dari file
+
+    Parameters:
+    models (dict): Dictionary berisi model ARIMA untuk setiap komponen
+    steps (int): Jumlah langkah ke depan untuk prediksi
+
+    Returns:
+    DataFrame: Hasil prediksi gabungan
     """
     forecasts = {}
 
     # Prediksi untuk setiap komponen
-    for component, model in models.items():
-        forecast = model.forecast(steps=steps)
-        forecasts[component] = forecast
+    for component in ["trend", "seasonal", "residual"]:
+        forecasts[component] = models[component].forecast(steps=steps)
 
-    # Gabungkan prediksi
-    final_forecast = forecasts["trend"] + forecasts["seasonal"] + forecasts["residual"]
+    # Gabungkan hasil prediksi
+    combined_forecast = (
+        forecasts["trend"] + forecasts["seasonal"] + forecasts["residual"]
+    )
 
-    return final_forecast
+    return combined_forecast
 
 
 def plot_forecast(actual_data, forecast_df):
@@ -203,10 +210,10 @@ def main(part_id, features_id):
     df_decomposed = prepare_data_with_decomposition(data)
 
     # Train model untuk setiap komponen
-    models = train_arima_with_decomposition(df_decomposed)
+    loaded_models = load_arima_models()
 
     # Buat prediksi untuk 30 hari (720 jam)
-    forecast = forecast_with_decomposition(models, steps=steps)
+    forecast = forecast_with_decomposition(loaded_models, steps=steps)
 
     # Buat DataFrame untuk hasil prediksi
     last_date = df_decomposed.index[-1]
@@ -223,9 +230,9 @@ def main(part_id, features_id):
     )
 
     # Plot hasil
-    # plot_forecast(df_decomposed.sum(axis=1), forecast_df)
-    # print("last_timestamp: ", last_date)
-    # print("forcast_df: ", forecast_df.head())
+    plot_forecast(df_decomposed.sum(axis=1), forecast_df)
+    print("last_timestamp: ", last_date)
+    print("forcast_df: ", forecast_df.head())
     save_predictions_to_db(forecast_df, part_id, features_id)
     predict_detail(part_id=part_id)
 
