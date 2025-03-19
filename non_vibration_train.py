@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from Envelope.arima import train_arima_model
 from model import *
 import pandas as pd  # type: ignore
 import numpy as np  # type: ignore
@@ -93,6 +94,23 @@ def load_arima_models(model_dir="models"):
         print(f"Model untuk {component} dimuat dari {model_filename}")
 
     return models
+
+def train_arima_with_decomposition(data):
+    """
+    Melatih model ARIMA untuk setiap komponen
+    """
+    models = {}
+
+    for component in ["trend", "seasonal", "residual"]:
+        best_params = find_best_parameters(data[component])
+        print(f"Parameter terbaik untuk {component}: {best_params}")
+
+        model = ARIMA(data[component], order=best_params)
+        fitted_model = model.fit()
+        models[component] = fitted_model
+
+    return models
+
 
 
 def forecast_with_decomposition(models, steps=30):
@@ -210,10 +228,13 @@ def main(part_id, features_id):
     df_decomposed = prepare_data_with_decomposition(data)
 
     # Train model untuk setiap komponen
-    loaded_models = load_arima_models()
+    # loaded_models = load_arima_models()
+    models = train_arima_with_decomposition(df_decomposed)
+    
 
     # Buat prediksi untuk 30 hari (720 jam)
-    forecast = forecast_with_decomposition(loaded_models, steps=steps)
+    # forecast = forecast_with_decomposition(loaded_models, steps=steps)
+    forecast = forecast_with_decomposition(models, steps=steps)
 
     # Buat DataFrame untuk hasil prediksi
     last_date = df_decomposed.index[-1]
@@ -230,11 +251,11 @@ def main(part_id, features_id):
     )
 
     # Plot hasil
-    plot_forecast(df_decomposed.sum(axis=1), forecast_df)
+    # plot_forecast(df_decomposed.sum(axis=1), forecast_df)
     print("last_timestamp: ", last_date)
     print("forcast_df: ", forecast_df.head())
     save_predictions_to_db(forecast_df, part_id, features_id)
-    predict_detail(part_id=part_id)
+    # predict_detail(part_id=part_id)
 
     # # Return hasil prediksi
     return forecast_df

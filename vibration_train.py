@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+
+from tomlkit import value
 from model import *
 import pandas as pd  # type: ignore
 import numpy as np # type: ignore
@@ -188,6 +190,12 @@ def plot_forecast(actual_data, forecast_df):
 def main(part_id, features_id):
     # Get data
     values = get_values(part_id, features_id)
+    if len(values) == 0:
+        print("No data available. Training aborted.")
+        return
+    elif len(values) < 10:
+        print("Not enough data. At least 10 data points are required. Training aborted.")
+        return
 
     steps = 6  # 12 months forecast
     periods = steps + 1
@@ -217,7 +225,7 @@ def main(part_id, features_id):
     )
 
     # Save predictions
-    save_predictions_to_db(forecast_df)
+    save_predictions_to_db(forecast_df, part_id, features_id)
     predict_detail(part_id=part_id)
     
 
@@ -226,4 +234,4 @@ def main(part_id, features_id):
 
 
 if __name__ == "__main__":
-    main("0d25b4e6-972b-4c40-b964-d17e09a3d3fa", "9dcb7e40-ada7-43eb-baf4-2ed584233de7")
+    main("5703ce87-5540-4b0f-bc11-99dca241aab3", "9dcb7e40-ada7-43eb-baf4-2ed584233de7")
