@@ -1,4 +1,7 @@
 from datetime import datetime, timedelta
+import json
+
+from requests import get
 from model import *
 import pandas as pd  # type: ignore
 import numpy as np  # type: ignore
@@ -214,9 +217,29 @@ def clean_anomali_data(values, part_id):
     return data
 
 
-def main(part_id, features_id):
+def main(part_id, features_id, process_monitoring_id):
     # Mengambil data
     values = get_values(part_id, features_id)
+    part = get_part(part_id)
+    
+    if len(values) == 0:
+        print("No data available. Training aborted.")
+        save_process_logs(
+            "ml-process",
+            "error",
+            f"{part[3]} - {part[1]} has {len(values)} data points. At least 10 data points are required. Training aborted.",
+            json.dumps(part),
+        )
+        return
+    elif len(values) < 10:
+        print("Not enough data. At least 10 data points are required. Training aborted.")
+        save_process_logs(
+            "ml-process",
+            "error",
+            f"{part[3]} - {part[1]} has {len(values)} data points. At least 10 data points are required. Training aborted.",
+            json.dumps(part),
+        )
+        return
 
     data = clean_anomali_data(values=values, part_id=part_id)
 
@@ -251,14 +274,27 @@ def main(part_id, features_id):
 
     # Plot hasil
     # plot_forecast(df_decomposed.sum(axis=1), forecast_df)
-    print("last_timestamp: ", last_date)
-    print("forcast_df: ", forecast_df.head())
+    # print("last_timestamp: ", last_date)
+    # print("forcast_df: ", forecast_df.head())
     save_predictions_to_db(forecast_df, part_id, features_id)
-    # predict_detail(part_id=part_id)
-
-    # # Return hasil prediksi
-    return forecast_df
+    predict_detail(part_id=part_id)
+    
+    save_process_logs(
+        "ml-process",
+        "success",
+        f"Training completed for {part[3]} - {part[1]}",
+    )
+    
+    process = get_process_monitoring(process_monitoring_id=process_monitoring_id)
+    update_total_data_and_data_row(
+        process_monitoring_id=process_monitoring_id,
+        total_data=process["total_data"] + 1,
+        data_row_count=process["data_row_count"] + len(forecast_df),
+    )
+    
+    # Return hasil prediksi
+    # return forecast_df
 
 
 if __name__ == "__main__":
-    main("28516795-f22d-4cbc-9469-b720f5d881d7", "9dcb7e40-ada7-43eb-baf4-2ed584233de7")
+    main("002f7fb8-2152-4d78-98a1-b09a372673f6", "9dcb7e40-ada7-43eb-baf4-2ed584233de7", "078f0dc3-7727-4453-94bf-2aedc357d6f4")

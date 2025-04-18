@@ -1,4 +1,6 @@
 import time
+
+from tomlkit import date
 from model import *
 from non_vibration_train import main as non_vibration_train_main
 from vibration_train import main as vibration_train_main
@@ -24,12 +26,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-async def start_training(part):
+async def start_training(part, process_monitoring_id):
     features_id = "9dcb7e40-ada7-43eb-baf4-2ed584233de7"
     try:
         # run sequential
         await asyncio.get_event_loop().run_in_executor(
-            None, non_vibration_train_main, part[0], features_id
+            None, non_vibration_train_main, part[0], features_id, process_monitoring_id
         )
 
         logger.info(f"Training completed for part: {part[1]}")
@@ -37,7 +39,7 @@ async def start_training(part):
         logger.error(f"Error training part_id {part[1]}: {e}")
 
 
-async def start_non_dcs_training(part):
+async def start_non_dcs_training(part, process_monitoring_id):
     try:
         features_id = "9dcb7e40-ada7-43eb-baf4-2ed584233de7"
         
@@ -53,11 +55,25 @@ async def train_all_parts():
     try:
         parts = get_parts()
         non_dcs = get_non_dcs_parts()
+        current_time = datetime.now(pytz.timezone("Asia/Jakarta"))
+        
         logger.info(f"Start Training for {len(parts)} parts and {len(non_dcs)}  non dcs parts")
         logger.info("=====================================")
+        
+        process = create_process_monitoring(
+            "ml-process",
+            current_time,
+            None,
+            0,
+            0,
+            0,
+            0,
+            0,
+            "processing"
+        )
 
-        tasks = [start_training(part) for part in parts]
-        second_tasks = [start_non_dcs_training(part) for part in non_dcs]
+        tasks = [start_training(part, process["process_monitoring_id"]) for part in parts]
+        second_tasks = [start_non_dcs_training(part, process["process_monitoring_id"]) for part in non_dcs]
 
         logger.info("=====================================")
         logger.info("Start Training for dcs parts")
@@ -66,6 +82,25 @@ async def train_all_parts():
         logger.info("Start Training for non dcs parts")
         await asyncio.gather(*second_tasks)
 
+        current_process = get_process_monitoring(process_monitoring_id=process["process_monitoring_id"])
+        disk_usage = disk_usage_count()
+        total_parts = len(parts) + len(non_dcs)
+        total_percent_parts = (current_process["total_data"] / total_parts) * 100
+        
+        print(f"Disk usage: {disk_usage}")
+        print(f"Current process: {current_process}")
+        update_process_monitoring(
+            process_monitoring_id=process["process_monitoring_id"],
+            process_monitoring_id="078f0dc3-7727-4453-94bf-2aedc357d6f4",
+            end_time= datetime.now(pytz.timezone("Asia/Jakarta")),
+            total_sensor=current_process["total_data"],
+            data_row_count=current_process["data_row_count"],
+            data_size_mb=disk_usage[0],
+            disk_usage_percentage=disk_usage[2],
+            sensor_data_percentage=total_percent_parts,
+            status="success",
+        )
+        
         logger.info("All training tasks completed")
     except Exception as e:
         logger.error(f"Error in train_all_parts: {e}")
