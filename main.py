@@ -1,6 +1,5 @@
 import time
 
-from tomlkit import date
 from model import *
 from non_vibration_train import main as non_vibration_train_main
 from vibration_train import main as vibration_train_main
@@ -91,11 +90,10 @@ async def train_all_parts():
         print(f"Current process: {current_process}")
         update_process_monitoring(
             process_monitoring_id=process["process_monitoring_id"],
-            process_monitoring_id="078f0dc3-7727-4453-94bf-2aedc357d6f4",
             end_time= datetime.now(pytz.timezone("Asia/Jakarta")),
             total_sensor=current_process["total_data"],
             data_row_count=current_process["data_row_count"],
-            data_size_mb=disk_usage[0],
+            data_size_mb=current_process["data_size_mb"],
             disk_usage_percentage=disk_usage[2],
             sensor_data_percentage=total_percent_parts,
             status="success",

@@ -67,10 +67,8 @@ def main(part_id):
     if len(predicted_failed) != 0:
         update_detail(part_id, "predicted failed", predicted_failed[0]["datetime"], predicted_failed[0]["value"])
     
-    print("done")
-
 
 if __name__ == "__main__":
-    main("28516795-f22d-4cbc-9469-b720f5d881d7")
+    main("e1d5179b-f7c9-449d-ad49-047d13fb5acc")
     # percent_calculation("64492e3f-8e1f-4eb4-b9ea-8a2ead652c8e", "9dcb7e40-ada7-43eb-baf4-2ed584233de7")
     # print("test command")

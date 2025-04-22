@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import decimal
 import json
 
 from model import *
@@ -248,17 +249,19 @@ def main(part_id, features_id, process_monitoring_id):
         f"Training completed for {part[3]} - {part[1]}",
     )
     
+    row_size_train = get_ml_result_row_size(part_id=part_id)
+    row_size_train = decimal.Decimal(row_size_train)  # Convert to Decimal
+    
     process = get_process_monitoring(process_monitoring_id=process_monitoring_id)
     update_total_data_and_data_row(
         process_monitoring_id=process_monitoring_id,
         total_data=process["total_data"] + 1,
         data_row_count=process["data_row_count"] + len(forecast_df),
+        row_size=process["data_size_mb"] + row_size_train,
     )
-    
-    
 
     # Return forecast results
-    # return forecast_df
+    return forecast_df
 
 
 if __name__ == "__main__":

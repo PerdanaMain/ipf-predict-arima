@@ -440,6 +440,28 @@ def update_process_monitoring(
     finally:
         if conn:
             conn.close()
+
+def get_ml_result_row_size(part_id):
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+
+        query = """
+            SELECT 
+                SUM(pg_column_size('dl_predict')) AS row_size_byte
+            FROM dl_predict
+            WHERE part_id = %s
+        """
+
+        cur.execute(query, (part_id,))
+        result = cur.fetchone()
+        return result[0]
+    except Exception as e:
+        print(f"An exception occurred: {e}")
+    finally:
+        if conn:
+            conn.close()
+ 
 def get_process_monitoring(process_monitoring_id):
     try:
         conn = get_connection()
@@ -461,7 +483,7 @@ def get_process_monitoring(process_monitoring_id):
         if conn:
             conn.close()
 
-def update_total_data_and_data_row(process_monitoring_id, total_data, data_row_count):
+def update_total_data_and_data_row(process_monitoring_id, total_data, data_row_count, row_size):
     try:
         conn = get_connection()
         cur = conn.cursor()
@@ -471,11 +493,12 @@ def update_total_data_and_data_row(process_monitoring_id, total_data, data_row_c
             UPDATE pf_process_monitoring
             SET total_data = %s,
                 data_row_count = %s,
+                data_size_mb = %s,
                 updated_at = %s
             WHERE id = %s
         """
 
-        cur.execute(query, (total_data, data_row_count,now, process_monitoring_id))
+        cur.execute(query, (total_data, data_row_count, row_size, now, process_monitoring_id))
         conn.commit()
     except Exception as e:
         print(f"An exception occurred while updating monitoring: {e}")

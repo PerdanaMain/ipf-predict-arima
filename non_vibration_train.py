@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta
+import decimal
 import json
 
 from requests import get
+
 from model import *
 import pandas as pd  # type: ignore
 import numpy as np  # type: ignore
@@ -218,6 +220,7 @@ def clean_anomali_data(values, part_id):
 
 
 def main(part_id, features_id, process_monitoring_id):
+# def main(part_id, features_id):
     # Mengambil data
     values = get_values(part_id, features_id)
     part = get_part(part_id)
@@ -246,7 +249,7 @@ def main(part_id, features_id, process_monitoring_id):
     steps = 24 * 30 * 6  # 30 days * 24 hours * 6 months
     periods = steps + 1
 
-    # # Siapkan data dengan dekomposisi
+    # Siapkan data dengan dekomposisi
     df_decomposed = prepare_data_with_decomposition(data)
 
     # Train model untuk setiap komponen
@@ -284,17 +287,22 @@ def main(part_id, features_id, process_monitoring_id):
         "success",
         f"Training completed for {part[3]} - {part[1]}",
     )
+    row_size_train = get_ml_result_row_size(part_id=part_id)
+    row_size_train = decimal.Decimal(row_size_train)  # Convert to Decimal
     
     process = get_process_monitoring(process_monitoring_id=process_monitoring_id)
     update_total_data_and_data_row(
         process_monitoring_id=process_monitoring_id,
         total_data=process["total_data"] + 1,
         data_row_count=process["data_row_count"] + len(forecast_df),
+        row_size=process["data_size_mb"] + row_size_train,
     )
     
     # Return hasil prediksi
-    # return forecast_df
+    return forecast_df
 
 
 if __name__ == "__main__":
-    main("002f7fb8-2152-4d78-98a1-b09a372673f6", "9dcb7e40-ada7-43eb-baf4-2ed584233de7", "078f0dc3-7727-4453-94bf-2aedc357d6f4")
+    main("62a1bde2-f8f2-4a45-bb55-be67c9d9e824", "9dcb7e40-ada7-43eb-baf4-2ed584233de7", "0294cece-8ebf-48be-8bdd-035467d913c2")
+    
+    # main("e1d5179b-f7c9-449d-ad49-047d13fb5acc", "9dcb7e40-ada7-43eb-baf4-2ed584233de7")
