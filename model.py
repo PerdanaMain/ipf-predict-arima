@@ -281,14 +281,14 @@ def get_detail(part_id):
             conn.close()
 
 
-def update_detail(part_id, status, time_failure, predict_value,):
+def update_detail(part_id, status, time_failure, predict_value, failure_description="Tidak terdeteksi failure sampai waktu yang ditentukan",):
     try:
         conn = get_connection()
         cur = conn.cursor()
         now = datetime.now(pytz.timezone("Asia/Jakarta"))
 
-        query = "UPDATE pf_details SET predict_status = %s, time_failure = %s, predict_value= %s, updated_at = %s WHERE part_id = %s"
-        cur.execute(query, (status, time_failure,predict_value,now, part_id))
+        query = "UPDATE pf_details SET predict_status = %s, time_failure = %s, predict_value= %s, failure_description = %s, updated_at = %s WHERE part_id = %s"
+        cur.execute(query, (status, time_failure,predict_value,failure_description,now, part_id))
         conn.commit()
     except Exception as e:
         print(f"An exception occurred while updating: {e}")
