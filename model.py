@@ -123,10 +123,13 @@ def get_values(part_id, features_id):
         cur = conn.cursor()
         cur.execute(
             """
-            SELECT date_time, value
+            SELECT 
+                DISTINCT ON (DATE(date_time)) date_time, 
+                value
             FROM dl_features_data
-            WHERE part_id = %s AND features_id = %s
-            ORDER BY date_time ASC;
+            WHERE part_id = %s
+            AND features_id = %s
+            ORDER BY DATE(date_time), date_time ASC;
             """,
             (part_id, features_id),
         )
@@ -198,7 +201,6 @@ def save_predictions_to_db(forecast_df, part_id, features_id):
         for _, row in df_to_save.iterrows():
             predict_id = str(uuid.uuid4())
             now = datetime.now(pytz.timezone("Asia/Jakarta"))
-            print("row datetime: ",row["date_time"])
             cur.execute(
                 insert_query,
                 (

@@ -22,7 +22,7 @@ def prepare_data(values):
     df = pd.DataFrame(values, columns=["timestamp", "value"])
     df.set_index("timestamp", inplace=True)
     df.sort_index(inplace=True)
-    df = df.resample("h").mean()  # Resampling per jam
+    df = df.resample("D").mean()  # Resampling per jam
     df = df.interpolate(method="linear")
     return df
 
@@ -31,7 +31,7 @@ def decompose_timeseries(data):
     """
     Melakukan dekomposisi time series menjadi komponen trend, seasonal, dan residual
     """
-    decomposition = seasonal_decompose(data, period=24)  # period=24 untuk data per jam
+    decomposition = seasonal_decompose(data, period=7)  # per Day
     trend = decomposition.trend
     seasonal = decomposition.seasonal
     residual = decomposition.resid
@@ -219,8 +219,8 @@ def clean_anomali_data(values, part_id):
     return data
 
 
-def main(part_id, features_id, process_monitoring_id):
-# def main(part_id, features_id):
+# def main(part_id, features_id, process_monitoring_id):
+def main(part_id, features_id):
     # Mengambil data
     values = get_values(part_id, features_id)
     part = get_part(part_id)
@@ -244,29 +244,40 @@ def main(part_id, features_id, process_monitoring_id):
         )
         return
 
+    # Menyimpan timestamp terakhir dari data asli
+    sorted_values = sorted(values, key=lambda x: x[0])
+    original_last_timestamp = sorted_values[-1][0]
+    
+    # Mendapatkan data yang bersih
     data = clean_anomali_data(values=values, part_id=part_id)
 
-    steps = 24 * 30 * 6  # 30 days * 24 hours * 6 months
+    steps = 30 * 12 * 10 # 10 years
     periods = steps + 1
 
     # Siapkan data dengan dekomposisi
     df_decomposed = prepare_data_with_decomposition(data)
 
     # Train model untuk setiap komponen
-    # loaded_models = load_arima_models()
     models = train_arima_with_decomposition(df_decomposed)
     
-
-    # Buat prediksi untuk 30 hari (720 jam)
-    # forecast = forecast_with_decomposition(loaded_models, steps=steps)
+    # Menggunakan forecast dengan model yang dilatih
     forecast = forecast_with_decomposition(models, steps=steps)
 
-    # Buat DataFrame untuk hasil prediksi
-    last_date = df_decomposed.index[-1]
-    forecast_index = pd.date_range(start=last_date, periods=periods, freq="h")[1:]
+    # Menggunakan tanggal hari ini
+    last_date = df_decomposed.index[-1] 
+    
+    # Menghitung selisih hari antara last_date dan hari ini
+    today = datetime.now().date()  # Tanggal hari ini
+    last_date_only = last_date.date()  # Ambil hanya tanggal dari last_date
+    days_difference = (today - last_date_only).days  # Selisih dalam hari
+
+    
+    # Buat range tanggal untuk forecast
+    forecast_index = pd.date_range(start=last_date, periods=periods, freq="D")[days_difference:]
+    
     forecast_df = pd.DataFrame(
         {
-            "forecast": forecast,  # date_time dan value ada disini
+            "forecast": forecast,
             "features_id": features_id,
             "part_id": part_id,
             "lower_ci": forecast - 2 * forecast.std(),
@@ -275,34 +286,11 @@ def main(part_id, features_id, process_monitoring_id):
         index=forecast_index,
     )
 
-    # Plot hasil
-    # plot_forecast(df_decomposed.sum(axis=1), forecast_df)
-    # print("last_timestamp: ", last_date)
-    # print("forcast_df: ", forecast_df.head())
     save_predictions_to_db(forecast_df, part_id, features_id)
     predict_detail(part_id=part_id)
     
-    save_process_logs(
-        "ml-process",
-        "success",
-        f"Training completed for {part[3]} - {part[1]}",
-    )
-    row_size_train = get_ml_result_row_size(part_id=part_id)
-    row_size_train = decimal.Decimal(row_size_train)  # Convert to Decimal
-    
-    process = get_process_monitoring(process_monitoring_id=process_monitoring_id)
-    update_total_data_and_data_row(
-        process_monitoring_id=process_monitoring_id,
-        total_data=process["total_data"] + 1,
-        data_row_count=process["data_row_count"] + len(forecast_df),
-        row_size=process["data_size_mb"] + row_size_train,
-    )
-    
-    # Return hasil prediksi
     return forecast_df
-
-
 if __name__ == "__main__":
-    main("62a1bde2-f8f2-4a45-bb55-be67c9d9e824", "9dcb7e40-ada7-43eb-baf4-2ed584233de7", "0294cece-8ebf-48be-8bdd-035467d913c2")
+    # main("62a1bde2-f8f2-4a45-bb55-be67c9d9e824", "9dcb7e40-ada7-43eb-baf4-2ed584233de7", "0294cece-8ebf-48be-8bdd-035467d913c2")
     
-    # main("e1d5179b-f7c9-449d-ad49-047d13fb5acc", "9dcb7e40-ada7-43eb-baf4-2ed584233de7")
+    main("e1d5179b-f7c9-449d-ad49-047d13fb5acc", "9dcb7e40-ada7-43eb-baf4-2ed584233de7")
