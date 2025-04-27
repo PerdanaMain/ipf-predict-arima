@@ -198,13 +198,12 @@ def save_predictions_to_db(forecast_df, part_id, features_id):
                 id,
                 features_id,
                 pfi_value,
-                status,
                 date_time,
                 part_id,
                 created_at,
                 updated_at
             ) VALUES (
-                %s, %s, %s, 'normal', %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s
             )
             RETURNING id
         """
