@@ -153,6 +153,30 @@ def get_values(part_id, features_id):
         print_log(f"An exception occurred {e}")
         print(f"An exception occurred {e}")
 
+def get_values_non_dcs(part_id, features_id):
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT 
+                date_time, 
+                value
+            FROM dl_features_data
+            WHERE part_id = %s
+            AND features_id = %s
+            ORDER BY date_time ASC;
+            """,
+            (part_id, features_id),
+        )
+
+        values = cur.fetchall()
+        cur.close()
+        conn.close()
+        return values
+    except Exception as e:
+        print_log(f"An exception occurred {e}")
+        print(f"An exception occurred {e}")
 
 def save_predictions_to_db(forecast_df, part_id, features_id):
     """

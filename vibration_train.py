@@ -188,9 +188,11 @@ def plot_forecast(actual_data, forecast_df):
     plt.savefig("monthly_forecast.png")
 
 
-def main(part_id, features_id, process_monitoring_id):
+# def main(part_id, features_id, process_monitoring_id):
+def main(part_id, features_id):
     # Get data
-    values = get_values(part_id, features_id)
+    values = get_values_non_dcs(part_id, features_id)
+    
     part = get_part(part_id)
     
     if len(values) == 0:
@@ -212,7 +214,7 @@ def main(part_id, features_id, process_monitoring_id):
         )
         return
 
-    steps = 6  # 12 months forecast
+    steps = 12 * 10 # 10 years
     periods = steps + 1
 
     # Prepare data with decomposition
@@ -243,26 +245,27 @@ def main(part_id, features_id, process_monitoring_id):
     save_predictions_to_db(forecast_df, part_id, features_id)
     predict_detail(part_id=part_id)
     
-    save_process_logs(
-        "ml-process",
-        "success",
-        f"Training completed for {part[3]} - {part[1]}",
-    )
+    # save_process_logs(
+    #     "ml-process",
+    #     "success",
+    #     f"Training completed for {part[3]} - {part[1]}",
+    # )
     
-    row_size_train = get_ml_result_row_size(part_id=part_id)
-    row_size_train = decimal.Decimal(row_size_train)  # Convert to Decimal
+    # row_size_train = get_ml_result_row_size(part_id=part_id)
+    # row_size_train = decimal.Decimal(row_size_train)  # Convert to Decimal
     
-    process = get_process_monitoring(process_monitoring_id=process_monitoring_id)
-    update_total_data_and_data_row(
-        process_monitoring_id=process_monitoring_id,
-        total_data=process["total_data"] + 1,
-        data_row_count=process["data_row_count"] + len(forecast_df),
-        row_size=process["data_size_mb"] + row_size_train,
-    )
+    # process = get_process_monitoring(process_monitoring_id=process_monitoring_id)
+    # update_total_data_and_data_row(
+    #     process_monitoring_id=process_monitoring_id,
+    #     total_data=process["total_data"] + 1,
+    #     data_row_count=process["data_row_count"] + len(forecast_df),
+    #     row_size=process["data_size_mb"] + row_size_train,
+    # )
 
     # Return forecast results
     return forecast_df
 
 
 if __name__ == "__main__":
-    main("1cf3d9cb-05d3-4dd3-8340-8afb50eef20f", "9dcb7e40-ada7-43eb-baf4-2ed584233de7", "078f0dc3-7727-4453-94bf-2aedc357d6f4")
+    # main("1cf3d9cb-05d3-4dd3-8340-8afb50eef20f", "9dcb7e40-ada7-43eb-baf4-2ed584233de7", "078f0dc3-7727-4453-94bf-2aedc357d6f4")
+    main("8e3d6dbf-116a-48fe-b032-7f98440e09c0", "9dcb7e40-ada7-43eb-baf4-2ed584233de7")
