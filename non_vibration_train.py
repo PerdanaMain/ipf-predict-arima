@@ -2,8 +2,6 @@ from datetime import datetime, timedelta
 import decimal
 import json
 
-from requests import get
-
 from model import *
 import pandas as pd  # type: ignore
 import numpy as np  # type: ignore
@@ -309,4 +307,4 @@ def main(part_id, features_id, process_monitoring_id):
 if __name__ == "__main__":
     main("62a1bde2-f8f2-4a45-bb55-be67c9d9e824", "9dcb7e40-ada7-43eb-baf4-2ed584233de7", "0294cece-8ebf-48be-8bdd-035467d913c2")
     
-    main("15ac1ec9-6681-48a8-a59b-a0ff8a681ddf", "9dcb7e40-ada7-43eb-baf4-2ed584233de7")
+    # main("1d9bcb98-eb0d-40ef-8eb4-f2afc533288f", "9dcb7e40-ada7-43eb-baf4-2ed584233de7")

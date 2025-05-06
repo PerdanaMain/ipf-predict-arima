@@ -65,7 +65,10 @@ def main(part_id):
     print(len(predicted_failed) != 0)
 
     if len(predicted_failed) != 0:
-        update_detail(part_id, "predicted failed", predicted_failed[0]["datetime"], predicted_failed[0]["value"], f"Terdeteksi failure sampai waktu {predicted_failed[0]['datetime']}")
+        update_detail(part_id, "predicted failed", predicted_failed[0]["datetime"], predicted_failed[0]["value"], f"Terdeteksi failure  {predicted_failed[0]['datetime'].strftime('%d %B %Y')}")
+    else:
+        update_detail(part_id, "normal", None, None, "Tidak terdeteksi failure sampai 10 Tahun ke depan")    
+    
     
 
 if __name__ == "__main__":
